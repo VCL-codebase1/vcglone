@@ -21,6 +21,15 @@ The app is built for Vercel from day one with Next.js App Router, TypeScript, Ta
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
+- shadcn/ui-style components on Radix UI primitives
+- Lucide React icons
+- Framer Motion
+- Sonner notifications
+- React Hook Form with Zod validation
+- TanStack Query
+- TanStack Table
+- Recharts
+- react-error-boundary and Sentry-ready error capture
 - PostgreSQL only
 - Prisma ORM and Prisma migrations
 - NextAuth/Auth.js credentials provider
@@ -77,6 +86,10 @@ Required:
 - `UPLOAD_PROVIDER`
 - `MAX_FILE_UPLOAD_MB`
 - `NODE_ENV`
+- `SENTRY_DSN` optional
+- `NEXT_PUBLIC_SENTRY_DSN` optional
+- `SENTRY_ORG` optional
+- `SENTRY_PROJECT` optional
 
 Optional provider secrets are documented in `.env.example`. Do not commit real credentials.
 

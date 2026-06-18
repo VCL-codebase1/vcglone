@@ -1,9 +1,15 @@
-import { clsx } from "clsx";
+"use client";
+
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={clsx("min-w-0 rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5", className)}>{children}</section>;
+  return <section className={cn("min-w-0 rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5", className)}>{children}</section>;
 }
 
 export function PageHeader({
@@ -26,20 +32,33 @@ export function PageHeader({
   );
 }
 
+const buttonVariants = cva(
+  "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
+  {
+    variants: {
+      variant: {
+        primary: "bg-brand text-white hover:bg-[#0b1f56]",
+        secondary: "border border-line bg-white text-ink hover:bg-surface",
+        danger: "bg-danger text-white hover:bg-red-800",
+        ghost: "text-ink hover:bg-surface"
+      }
+    },
+    defaultVariants: {
+      variant: "primary"
+    }
+  }
+);
+
 export function Button({
   className,
-  variant = "primary",
+  variant,
+  asChild = false,
   ...props
-}: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "danger" }) {
+}: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "button";
   return (
-    <button
-      className={clsx(
-        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
-        variant === "primary" && "bg-brand text-white hover:bg-blue-700",
-        variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface",
-        variant === "danger" && "bg-danger text-white hover:bg-red-800",
-        className
-      )}
+    <Comp
+      className={cn(buttonVariants({ variant }), className)}
       {...props}
     />
   );
@@ -52,9 +71,9 @@ export function LinkButton({
 }: ComponentProps<typeof Link> & { variant?: "primary" | "secondary" }) {
   return (
     <Link
-      className={clsx(
+      className={cn(
         "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition max-[420px]:w-full",
-        variant === "primary" && "bg-brand text-white hover:bg-blue-700",
+        variant === "primary" && "bg-brand text-white hover:bg-[#0b1f56]",
         variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface",
         className
       )}
@@ -67,7 +86,7 @@ export function Input(props: ComponentProps<"input">) {
   return (
     <input
       {...props}
-      className={clsx(
+      className={cn(
         "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
         props.className
       )}
@@ -79,7 +98,7 @@ export function Select(props: ComponentProps<"select">) {
   return (
     <select
       {...props}
-      className={clsx("focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink", props.className)}
+      className={cn("focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink", props.className)}
     />
   );
 }
@@ -88,7 +107,7 @@ export function Textarea(props: ComponentProps<"textarea">) {
   return (
     <textarea
       {...props}
-      className={clsx(
+      className={cn(
         "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
         props.className
       )}
@@ -116,7 +135,7 @@ export function StatusBadge({ value }: { value: string }) {
         : value.includes("REJECTED") || value.includes("ABSENT")
           ? "bg-red-50 text-danger ring-red-200"
           : "bg-slate-100 text-slate-700 ring-slate-200";
-  return <span className={clsx("inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1", color)}>{normalized}</span>;
+  return <span className={cn("inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1", color)}>{normalized}</span>;
 }
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
@@ -146,4 +165,102 @@ export function Table({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+export const Dialog = DialogPrimitive.Root;
+export const DialogTrigger = DialogPrimitive.Trigger;
+export const DialogClose = DialogPrimitive.Close;
+
+export function DialogContent({
+  children,
+  className,
+  title,
+  description
+}: {
+  children: ReactNode;
+  className?: string;
+  title?: string;
+  description?: string;
+}) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out" />
+      <DialogPrimitive.Content
+        className={cn(
+          "fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-line bg-white p-5 shadow-soft outline-none",
+          className
+        )}
+      >
+        {title ? <DialogPrimitive.Title className="text-lg font-semibold text-ink">{title}</DialogPrimitive.Title> : null}
+        {description ? <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description> : null}
+        <DialogPrimitive.Close className="focus-ring absolute right-3 top-3 rounded-md p-1 text-muted hover:text-ink">
+          <X className="h-4 w-4" aria-hidden />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+        <div className={cn(title || description ? "mt-4" : "")}>{children}</div>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
+}
+
+export const Sheet = DialogPrimitive.Root;
+export const SheetTrigger = DialogPrimitive.Trigger;
+export const SheetClose = DialogPrimitive.Close;
+
+export function SheetContent({
+  children,
+  className,
+  side = "right",
+  title
+}: {
+  children: ReactNode;
+  className?: string;
+  side?: "left" | "right";
+  title?: string;
+}) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
+      <DialogPrimitive.Content
+        className={cn(
+          "fixed inset-y-0 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-y-auto border-line bg-white p-4 shadow-soft outline-none",
+          side === "left" ? "left-0 border-r" : "right-0 border-l",
+          className
+        )}
+      >
+        {title ? <DialogPrimitive.Title className="mb-4 text-lg font-semibold text-ink">{title}</DialogPrimitive.Title> : null}
+        <DialogPrimitive.Close className="focus-ring absolute right-3 top-3 rounded-md p-1 text-muted hover:text-ink">
+          <X className="h-4 w-4" aria-hidden />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
+}
+
+export const Drawer = DialogPrimitive.Root;
+export const DrawerTrigger = DialogPrimitive.Trigger;
+export const DrawerClose = DialogPrimitive.Close;
+
+export function DrawerContent({ children, className, title }: { children: ReactNode; className?: string; title?: string }) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
+      <DialogPrimitive.Content
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-lg border border-line bg-white p-4 shadow-soft outline-none",
+          className
+        )}
+      >
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line" />
+        {title ? <DialogPrimitive.Title className="mb-4 text-lg font-semibold text-ink">{title}</DialogPrimitive.Title> : null}
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
+}
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-md bg-slate-200", className)} />;
 }

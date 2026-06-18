@@ -2,8 +2,9 @@
 
 import { Clock, LocateFixed, MapPinOff } from "lucide-react";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { submitAttendanceAction } from "@/lib/actions";
-import { Button, Card, Textarea } from "@/components/ui";
+import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textarea } from "@/components/ui";
 
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
@@ -14,6 +15,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   async function captureAndSubmit() {
@@ -32,8 +34,11 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
         if (result.ok) {
           setMessage(result.message);
           setNote("");
+          setDialogOpen(false);
+          toast.success(result.message);
         } else {
           setWarning(result.message);
+          toast.error(result.message);
         }
       });
     };
@@ -48,6 +53,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
       (position) => submit(position.coords),
       () => {
         setWarning("Location permission was denied or unavailable. Add a note to submit for review.");
+        toast.warning("Location unavailable", { description: "Add a note so attendance can be submitted for review." });
         submit();
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
@@ -59,7 +65,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
   return (
     <Card className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-md bg-blue-50 p-2 text-brand">
+        <div className="rounded-md bg-brandSoft p-2 text-brand">
           {disabled ? <Clock className="h-5 w-5" aria-hidden /> : <LocateFixed className="h-5 w-5" aria-hidden />}
         </div>
         <div>
@@ -86,9 +92,31 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
         </div>
       ) : null}
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      <Button className="w-full sm:w-auto" disabled={disabled || pending} onClick={captureAndSubmit}>
-        {pending ? "Submitting..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Done"}
-      </Button>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="w-full sm:w-auto" disabled={disabled || pending}>
+            {pending ? "Submitting..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Done"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent
+          title={nextAction === "check-in" ? "Confirm check in" : "Confirm check out"}
+          description="Your browser will ask for location once for this attendance action."
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, device information, and your optional note. It does not track your movement continuously.
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button type="button" disabled={pending} onClick={captureAndSubmit}>
+                {pending ? "Submitting..." : "Continue"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

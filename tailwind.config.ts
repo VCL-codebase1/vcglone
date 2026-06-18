@@ -13,7 +13,8 @@ const config: Config = {
         muted: "#667085",
         line: "#d9e0ea",
         surface: "#f7f9fc",
-        brand: "#2563eb",
+        brand: "#102B74",
+        brandSoft: "#eaf0ff",
         success: "#047857",
         warning: "#b45309",
         danger: "#b42318"
