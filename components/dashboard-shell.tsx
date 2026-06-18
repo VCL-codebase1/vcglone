@@ -35,7 +35,7 @@ export async function DashboardShell({
     <div className="min-h-screen bg-surface">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-line bg-white px-4 py-5 lg:block">
         <Link href="/" className="block rounded-md px-3 py-2">
-          <p className="text-lg font-bold text-ink">WorkforceOps</p>
+          <p className="text-lg font-bold text-ink">vcglOne</p>
           <p className="text-xs font-medium text-muted">{area}</p>
         </Link>
         <nav className="mt-8 space-y-1">
@@ -60,7 +60,7 @@ export async function DashboardShell({
       </aside>
       <header className="sticky top-0 z-10 border-b border-line bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between">
-          <Link href="/" className="font-bold text-ink">WorkforceOps</Link>
+          <Link href="/" className="font-bold text-ink">vcglOne</Link>
           <Link href="/api/auth/signout" className="text-sm font-semibold text-danger">Sign out</Link>
         </div>
         <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -75,3 +75,5 @@ export async function DashboardShell({
     </div>
   );
 }
+
+

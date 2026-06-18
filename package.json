@@ -1,8 +1,8 @@
 {
-  "name": "workforceops",
+  "name": "vcglone",
   "version": "1.0.0",
   "private": true,
-  "description": "WorkforceOps internal workforce operations platform for attendance, leave, employee records, reporting, and audit logs.",
+  "description": "vcglOne internal workforce operations platform for attendance, leave, employee records, reporting, and audit logs.",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -46,3 +46,5 @@
     "typescript": "^5.7.2"
   }
 }
+
+

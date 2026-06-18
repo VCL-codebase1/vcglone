@@ -5,7 +5,13 @@ import { createAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
 
+const authSecret =
+  process.env.NEXTAUTH_SECRET ||
+  process.env.AUTH_SECRET ||
+  (process.env.NODE_ENV === "production" ? undefined : "dev-only-vcglone-auth-secret");
+
 export const authOptions: NextAuthOptions = {
+  secret: authSecret,
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 10

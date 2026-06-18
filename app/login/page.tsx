@@ -13,7 +13,7 @@ export default async function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-brand">WorkforceOps</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-brand">vcglOne</p>
           <h1 className="mt-2 text-3xl font-semibold text-ink">Sign in to your workspace</h1>
           <p className="mt-2 text-sm text-muted">Attendance, leave governance, employee records, and approvals in one secure place.</p>
         </div>
@@ -27,3 +27,5 @@ export default async function LoginPage() {
     </main>
   );
 }
+
+

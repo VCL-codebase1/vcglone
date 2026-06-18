@@ -1,6 +1,6 @@
-# WorkforceOps
+# vcglOne
 
-WorkforceOps is a production-conscious internal workforce operations platform for attendance visibility, location-aware daily check-in/check-out, leave governance, employee records, admin approvals, reporting, and audit logs.
+vcglOne is a production-conscious internal workforce operations platform for attendance visibility, location-aware daily check-in/check-out, leave governance, employee records, admin approvals, reporting, and audit logs.
 
 The app is built for Vercel from day one with Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma ORM, credentials authentication, bcrypt password hashing, server-side RBAC, CSV exports, and a cloud-storage abstraction for leave documents.
 
@@ -71,6 +71,7 @@ Required:
 - `DATABASE_URL`
 - `DIRECT_URL`
 - `NEXTAUTH_SECRET`
+- `AUTH_SECRET` optional alias; set it to the same value as `NEXTAUTH_SECRET` if your host expects Auth.js naming
 - `NEXTAUTH_URL`
 - `APP_URL`
 - `UPLOAD_PROVIDER`
@@ -105,7 +106,7 @@ Avoid destructive resets in production. `npm run db:reset` is for local developm
 
 1. Create a PostgreSQL database on Neon, Supabase, or Aiven.
 2. Add `DATABASE_URL` and `DIRECT_URL` to Vercel project environment variables.
-3. Add a strong `NEXTAUTH_SECRET`.
+3. Add a strong `NEXTAUTH_SECRET`. In Vercel, also add `AUTH_SECRET` with the same value if you want compatibility with newer Auth.js naming.
 4. Set `NEXTAUTH_URL` and `APP_URL` to your production Vercel URL.
 5. Set `UPLOAD_PROVIDER=none` unless you have wired a supported cloud provider.
 6. Deploy to Vercel.
@@ -156,15 +157,16 @@ All demo accounts use password:
 Password123!
 ```
 
-- Super Admin: `superadmin@workforceops.local`
-- HR Admin: `hr@workforceops.local`
-- Manager: `manager@workforceops.local`
-- Employee: `employee@workforceops.local`
-- Employee: `engineer@workforceops.local`
+- Super Admin: `superadmin@vcglone.local`
+- HR Admin: `hr@vcglone.local`
+- Manager: `manager@vcglone.local`
+- Employee: `employee@vcglone.local`
+- Employee: `engineer@vcglone.local`
 
 ## Production Checklist
 
 - Set a real `NEXTAUTH_SECRET`.
+- Set `AUTH_SECRET` to the same value if your deployment environment expects it.
 - Set production `NEXTAUTH_URL`.
 - Use a production PostgreSQL database.
 - Run Prisma migrations with `prisma migrate deploy`.
@@ -181,3 +183,5 @@ Password123!
 - Test CSV export.
 - Test role restrictions.
 - Test audit logs.
+
+

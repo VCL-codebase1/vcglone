@@ -76,7 +76,7 @@ async function uploadToCloudinary(file: File, objectKey: string): Promise<Upload
   if (!cloudName || !apiKey || !apiSecret) return { ok: false, message: "Cloudinary is missing required server credentials." };
 
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const folder = "workforceops/leave-documents";
+  const folder = "vcglone/leave-documents";
   const publicId = objectKey.replace(/\.[^.]+$/, "");
   const signatureBase = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
   const signature = createHash("sha1").update(signatureBase).digest("hex");
@@ -144,3 +144,5 @@ function getAwsSigningKey(secret: string, dateStamp: string, region: string, ser
   const kService = createHmac("sha256", kRegion).update(service).digest();
   return createHmac("sha256", kService).update("aws4_request").digest();
 }
+
+

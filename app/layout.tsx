@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "WorkforceOps",
+  title: "vcglOne",
   description: "Internal workforce operations platform for attendance, leave, employee records, reporting, and audit logs."
 };
 
@@ -16,3 +16,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
+

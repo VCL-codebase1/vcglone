@@ -77,7 +77,7 @@ async function main() {
   const superAdmin = await upsertUser({
     firstName: "Ada",
     lastName: "Okafor",
-    email: "superadmin@workforceops.local",
+    email: "superadmin@vcglone.local",
     role: Role.SUPER_ADMIN,
     departmentId: people.id,
     jobTitle: "Head of Systems"
@@ -85,7 +85,7 @@ async function main() {
   const hrAdmin = await upsertUser({
     firstName: "Maya",
     lastName: "Mensah",
-    email: "hr@workforceops.local",
+    email: "hr@vcglone.local",
     role: Role.HR_ADMIN,
     departmentId: people.id,
     managerId: superAdmin.id,
@@ -94,7 +94,7 @@ async function main() {
   const manager = await upsertUser({
     firstName: "Tunde",
     lastName: "Bello",
-    email: "manager@workforceops.local",
+    email: "manager@vcglone.local",
     role: Role.MANAGER,
     departmentId: operations.id,
     managerId: hrAdmin.id,
@@ -103,7 +103,7 @@ async function main() {
   const employee = await upsertUser({
     firstName: "Chika",
     lastName: "Nwosu",
-    email: "employee@workforceops.local",
+    email: "employee@vcglone.local",
     role: Role.EMPLOYEE,
     departmentId: operations.id,
     managerId: manager.id,
@@ -112,7 +112,7 @@ async function main() {
   const engineer = await upsertUser({
     firstName: "Ife",
     lastName: "Adebayo",
-    email: "engineer@workforceops.local",
+    email: "engineer@vcglone.local",
     role: Role.EMPLOYEE,
     departmentId: engineering.id,
     managerId: manager.id,
@@ -218,7 +218,7 @@ async function main() {
 
   console.log("Seed complete.");
   console.log("Demo password for all accounts: Password123!");
-  console.log("superadmin@workforceops.local, hr@workforceops.local, manager@workforceops.local, employee@workforceops.local");
+  console.log("superadmin@vcglone.local, hr@vcglone.local, manager@vcglone.local, employee@vcglone.local");
 }
 
 main()
@@ -229,3 +229,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+
