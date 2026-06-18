@@ -33,7 +33,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
       <Card><dl className="divide-y divide-line">{fields.map(([label, value]) => <div key={label} className="grid gap-2 py-3 md:grid-cols-4"><dt className="text-sm font-medium text-muted">{label}</dt><dd className="break-words text-sm font-semibold text-ink md:col-span-3">{value}</dd></div>)}</dl></Card>
       <Card>
         <h2 className="mb-4 font-semibold text-ink">Manual adjustment</h2>
-        <form action={manuallyAdjustAttendance} className="grid gap-4 md:grid-cols-3">
+        <form action={manuallyAdjustAttendance} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <input type="hidden" name="recordId" value={record.id} />
           <Field label="Status"><Select name="status" defaultValue={record.status}>{Object.values(AttendanceStatus).map((status) => <option key={status}>{status}</option>)}</Select></Field>
           <div className="md:col-span-2"><Field label="Mandatory reason"><Textarea name="reason" rows={3} minLength={10} required /></Field></div>
@@ -43,3 +43,6 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
     </div>
   );
 }
+
+
+

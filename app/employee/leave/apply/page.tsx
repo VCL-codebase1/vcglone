@@ -20,3 +20,5 @@ export default async function ApplyLeavePage() {
     </div>
   );
 }
+
+

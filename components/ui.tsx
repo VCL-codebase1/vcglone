@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={clsx("rounded-lg border border-line bg-white p-5 shadow-soft", className)}>{children}</section>;
+  return <section className={clsx("min-w-0 rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5", className)}>{children}</section>;
 }
 
 export function PageHeader({
@@ -16,12 +16,12 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-normal text-ink">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-sm text-muted">{description}</p> : null}
+    <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="break-words text-xl font-semibold tracking-normal text-ink sm:text-2xl">{title}</h1>
+        {description ? <p className="mt-1 max-w-3xl break-words text-sm text-muted">{description}</p> : null}
       </div>
-      {action}
+      {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}
     </div>
   );
 }
@@ -34,7 +34,7 @@ export function Button({
   return (
     <button
       className={clsx(
-        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
+        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
         variant === "primary" && "bg-brand text-white hover:bg-blue-700",
         variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface",
         variant === "danger" && "bg-danger text-white hover:bg-red-800",
@@ -53,7 +53,7 @@ export function LinkButton({
   return (
     <Link
       className={clsx(
-        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition",
+        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition max-[420px]:w-full",
         variant === "primary" && "bg-brand text-white hover:bg-blue-700",
         variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface",
         className
@@ -68,7 +68,7 @@ export function Input(props: ComponentProps<"input">) {
     <input
       {...props}
       className={clsx(
-        "focus-ring w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
+        "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
         props.className
       )}
     />
@@ -79,7 +79,7 @@ export function Select(props: ComponentProps<"select">) {
   return (
     <select
       {...props}
-      className={clsx("focus-ring w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink", props.className)}
+      className={clsx("focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink", props.className)}
     />
   );
 }
@@ -89,7 +89,7 @@ export function Textarea(props: ComponentProps<"textarea">) {
     <textarea
       {...props}
       className={clsx(
-        "focus-ring w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
+        "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
         props.className
       )}
     />
@@ -98,7 +98,7 @@ export function Textarea(props: ComponentProps<"textarea">) {
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <label className="block space-y-1.5 text-sm font-medium text-ink">
+    <label className="block min-w-0 space-y-1.5 text-sm font-medium text-ink">
       <span>{label}</span>
       {children}
       {hint ? <span className="block text-xs font-normal text-muted">{hint}</span> : null}
@@ -116,12 +116,12 @@ export function StatusBadge({ value }: { value: string }) {
         : value.includes("REJECTED") || value.includes("ABSENT")
           ? "bg-red-50 text-danger ring-red-200"
           : "bg-slate-100 text-slate-700 ring-slate-200";
-  return <span className={clsx("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1", color)}>{normalized}</span>;
+  return <span className={clsx("inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1", color)}>{normalized}</span>;
 }
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-line bg-white p-8 text-center">
+    <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center sm:p-8">
       <p className="font-semibold text-ink">{title}</p>
       <p className="mt-1 text-sm text-muted">{description}</p>
     </div>
@@ -132,12 +132,18 @@ export function StatCard({ label, value, detail }: { label: string; value: React
   return (
     <Card className="p-4">
       <p className="text-sm font-medium text-muted">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
+      <p className="mt-2 break-words text-2xl font-semibold text-ink sm:text-3xl">{value}</p>
       {detail ? <p className="mt-1 text-xs text-muted">{detail}</p> : null}
     </Card>
   );
 }
 
 export function Table({ children }: { children: ReactNode }) {
-  return <div className="overflow-x-auto rounded-lg border border-line bg-white shadow-soft"><table className="min-w-full divide-y divide-line text-sm">{children}</table></div>;
+  return (
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-white shadow-soft">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] divide-y divide-line text-sm">{children}</table>
+      </div>
+    </div>
+  );
 }

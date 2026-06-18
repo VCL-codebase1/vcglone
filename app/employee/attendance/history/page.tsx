@@ -22,9 +22,9 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
     <div className="space-y-6">
       <PageHeader title="Attendance History" description="Filter and review your personal attendance records." />
       <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-3">
-        <input className="rounded-md border border-line px-3 py-2 text-sm" type="date" name="from" defaultValue={searchParams.from} />
-        <input className="rounded-md border border-line px-3 py-2 text-sm" type="date" name="to" defaultValue={searchParams.to} />
-        <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Apply filters</button>
+        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="from" defaultValue={searchParams.from} />
+        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="to" defaultValue={searchParams.to} />
+        <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Apply filters</button>
       </form>
       {records.length ? (
         <Table>
@@ -47,3 +47,5 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
     </div>
   );
 }
+
+

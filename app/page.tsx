@@ -7,3 +7,5 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions);
   redirect(session?.user?.role ? roleHome(session.user.role) : "/login");
 }
+
+

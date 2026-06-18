@@ -21,7 +21,7 @@ export default async function EmployeeAttendancePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Attendance" description={`${format(new Date(), "EEEE, MMMM d, yyyy")} · Current time: `} action={<div className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft"><LiveClock /></div>} />
+      <PageHeader title="Attendance" description={`${format(new Date(), "EEEE, MMMM d, yyyy")} - Current time: `} action={<div className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft"><LiveClock /></div>} />
       <Card className="grid gap-4 sm:grid-cols-3">
         <div><p className="text-sm text-muted">Status</p><div className="mt-2"><StatusBadge value={record?.status ?? "NOT_CHECKED_IN"} /></div></div>
         <div><p className="text-sm text-muted">Check in</p><p className="mt-2 font-semibold text-ink">{formatTime(record?.checkInTime)}</p></div>
@@ -33,3 +33,5 @@ export default async function EmployeeAttendancePage() {
     </div>
   );
 }
+
+

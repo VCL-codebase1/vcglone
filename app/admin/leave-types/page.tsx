@@ -10,7 +10,7 @@ export default async function LeaveTypesPage() {
     <div className="space-y-6">
       <PageHeader title="Leave Types" description="Configure leave categories, entitlements, document requirements, and paid status." />
       <Card>
-        <form action={createLeaveType} className="grid gap-4 md:grid-cols-4">
+        <form action={createLeaveType} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Field label="Name"><Input name="name" required /></Field>
           <Field label="Annual entitlement"><Input name="annualEntitlementDays" type="number" min={0} defaultValue={0} required /></Field>
           <div className="md:col-span-2"><Field label="Description"><Textarea name="description" rows={2} /></Field></div>
@@ -28,3 +28,6 @@ export default async function LeaveTypesPage() {
     </div>
   );
 }
+
+
+

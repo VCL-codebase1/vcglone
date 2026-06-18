@@ -36,7 +36,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
           <div className="md:col-span-2"><Button type="submit">Save changes</Button></div>
         </form>
       </Card>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {balances.map((balance) => <Card key={balance.id}><p className="font-semibold">{balance.leaveType.name}</p><p className="mt-2 text-2xl font-semibold text-brand">{balance.remainingDays}</p><p className="text-sm text-muted">remaining of {balance.entitlementDays}</p></Card>)}
       </div>
       <Table>
@@ -50,3 +50,6 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
     </div>
   );
 }
+
+
+

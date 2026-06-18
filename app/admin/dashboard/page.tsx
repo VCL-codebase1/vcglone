@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Admin Dashboard" description="Organization-wide attendance, leave, and workforce operations overview." />
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total employees" value={totalEmployees} />
         <StatCard label="Checked in today" value={checkedIn} />
         <StatCard label="Checked out today" value={checkedOut} />
@@ -30,9 +30,9 @@ export default async function AdminDashboardPage() {
         <StatCard label="Present today" value={checkedIn} detail="Late policy calculation can be enabled later." />
         <StatCard label="Late count" value={0} detail="Work policy placeholder" />
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
-        <section className="space-y-3">
-          <h2 className="font-semibold text-ink">Today’s attendance</h2>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+        <section className="min-w-0 space-y-3">
+          <h2 className="font-semibold text-ink">Today&apos;s attendance</h2>
           <Table>
             <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee</th><th className="px-4 py-3">In</th><th className="px-4 py-3">Out</th><th className="px-4 py-3">Status</th></tr></thead>
             <tbody className="divide-y divide-line">
@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
             </tbody>
           </Table>
         </section>
-        <section className="space-y-3">
+        <section className="min-w-0 space-y-3">
           <h2 className="font-semibold text-ink">Recent activity</h2>
           <Table>
             <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Action</th><th className="px-4 py-3">Actor</th><th className="px-4 py-3">Time</th></tr></thead>
@@ -55,9 +55,12 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-dashed border-line bg-white p-6"><h3 className="font-semibold text-ink">Monthly attendance trend</h3><p className="mt-2 text-sm text-muted">Placeholder for chart integration once historical volume is available.</p></div>
-        <div className="rounded-lg border border-dashed border-line bg-white p-6"><h3 className="font-semibold text-ink">Department attendance summary</h3><p className="mt-2 text-sm text-muted">Placeholder for department-level analytics.</p></div>
+        <div className="rounded-lg border border-dashed border-line bg-white p-4 sm:p-6"><h3 className="font-semibold text-ink">Monthly attendance trend</h3><p className="mt-2 text-sm text-muted">Placeholder for chart integration once historical volume is available.</p></div>
+        <div className="rounded-lg border border-dashed border-line bg-white p-4 sm:p-6"><h3 className="font-semibold text-ink">Department attendance summary</h3><p className="mt-2 text-sm text-muted">Placeholder for department-level analytics.</p></div>
       </div>
     </div>
   );
 }
+
+
+

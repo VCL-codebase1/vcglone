@@ -13,7 +13,7 @@ export default async function DepartmentsPage() {
     <div className="space-y-6">
       <PageHeader title="Departments" description="Create departments and assign department managers." />
       <Card>
-        <form action={createDepartment} className="grid gap-4 md:grid-cols-4">
+        <form action={createDepartment} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Field label="Name"><Input name="name" required /></Field>
           <Field label="Manager"><Select name="managerId"><option value="">None</option>{managers.map((manager) => <option key={manager.id} value={manager.id}>{manager.firstName} {manager.lastName}</option>)}</Select></Field>
           <div className="md:col-span-2"><Field label="Description"><Textarea name="description" rows={2} /></Field></div>
@@ -29,3 +29,6 @@ export default async function DepartmentsPage() {
     </div>
   );
 }
+
+
+

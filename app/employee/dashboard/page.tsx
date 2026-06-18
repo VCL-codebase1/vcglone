@@ -33,15 +33,15 @@ export default async function EmployeeDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Good day, ${user.firstName}`} description={`${format(new Date(), "EEEE, MMMM d, yyyy")} · `} action={<div className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft"><LiveClock /></div>} />
-      <div className="grid gap-4 md:grid-cols-4">
+      <PageHeader title={`Good day, ${user.firstName}`} description={`${format(new Date(), "EEEE, MMMM d, yyyy")} ?? `} action={<div className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft"><LiveClock /></div>} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Today" value={<StatusBadge value={status} />} detail="Attendance status" />
         <StatCard label="Check in" value={formatTime(record?.checkInTime)} />
         <StatCard label="Check out" value={formatTime(record?.checkOutTime)} />
         <StatCard label="Duration" value={compactDuration(record?.totalMinutes)} />
       </div>
       <AttendanceActionCard nextAction={nextAction} lastCoordinates={coords} />
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <Card>
           <div className="mb-4 flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-brand" aria-hidden />
@@ -90,3 +90,6 @@ export default async function EmployeeDashboardPage() {
     </div>
   );
 }
+
+
+

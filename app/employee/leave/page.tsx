@@ -14,7 +14,7 @@ export default async function EmployeeLeavePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Leave" description="View balances and request status." action={<LinkButton href="/employee/leave/apply">Apply for leave</LinkButton>} />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {balances.map((balance) => (
           <div key={balance.id} className="rounded-lg border border-line bg-white p-4 shadow-soft">
             <p className="font-semibold text-ink">{balance.leaveType.name}</p>
@@ -34,3 +34,6 @@ export default async function EmployeeLeavePage() {
     </div>
   );
 }
+
+
+

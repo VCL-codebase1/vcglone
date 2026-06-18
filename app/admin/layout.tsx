@@ -20,3 +20,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   return <DashboardShell area="Admin console" nav={nav}>{children}</DashboardShell>;
 }
+
+

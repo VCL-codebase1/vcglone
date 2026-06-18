@@ -16,7 +16,7 @@ export default async function SettingsPage() {
       <PageHeader title="Settings" description="Company settings, work policy, and upload provider status." />
       <Card>
         <h2 className="mb-4 font-semibold text-ink">Work policy</h2>
-        <form action={updateWorkPolicy} className="grid gap-4 md:grid-cols-4">
+        <form action={updateWorkPolicy} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Field label="Work start"><Input name="workStartTime" type="time" defaultValue={policy?.workStartTime || "09:00"} required /></Field>
           <Field label="Work end"><Input name="workEndTime" type="time" defaultValue={policy?.workEndTime || "17:00"} required /></Field>
           <Field label="Grace minutes"><Input name="gracePeriodMinutes" type="number" defaultValue={policy?.gracePeriodMinutes || 15} min={0} /></Field>
@@ -38,3 +38,6 @@ export default async function SettingsPage() {
     </div>
   );
 }
+
+
+

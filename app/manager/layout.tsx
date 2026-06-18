@@ -16,3 +16,5 @@ export default async function ManagerLayout({ children }: { children: React.Reac
   await requireRole([Role.MANAGER, Role.HR_ADMIN, Role.SUPER_ADMIN]);
   return <DashboardShell area="Manager workspace" nav={nav}>{children}</DashboardShell>;
 }
+
+

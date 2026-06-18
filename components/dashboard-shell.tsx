@@ -32,13 +32,15 @@ export async function DashboardShell({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-surface">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-line bg-white px-4 py-5 lg:block">
-        <Link href="/" className="block rounded-md px-3 py-2">
-          <p className="text-lg font-bold text-ink">vcglOne</p>
-          <p className="text-xs font-medium text-muted">{area}</p>
-        </Link>
-        <nav className="mt-8 space-y-1">
+    <div className="min-h-screen min-w-0 bg-surface">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-line bg-white px-4 py-5 lg:flex">
+        <div className="shrink-0">
+          <Link href="/" className="block rounded-md px-3 py-2">
+            <p className="text-lg font-bold text-ink">vcglOne</p>
+            <p className="text-xs font-medium text-muted">{area}</p>
+          </Link>
+        </div>
+        <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pb-4 pr-1">
           {nav.map((item) => {
             const Icon = iconMap[item.icon];
             return (
@@ -49,7 +51,7 @@ export async function DashboardShell({
             );
           })}
         </nav>
-        <div className="absolute bottom-5 left-4 right-4 rounded-lg border border-line bg-surface p-3 text-sm">
+        <div className="mt-4 shrink-0 rounded-lg border border-line bg-surface p-3 text-sm">
           <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
           <p className="text-xs text-muted">{session.user.role.replace("_", " ")}</p>
           <Link href="/api/auth/signout" className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-danger">
@@ -58,10 +60,10 @@ export async function DashboardShell({
           </Link>
         </div>
       </aside>
-      <header className="sticky top-0 z-10 border-b border-line bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-10 border-b border-line bg-white/95 px-3 py-3 backdrop-blur sm:px-4 lg:hidden">
+        <div className="flex min-w-0 items-center justify-between gap-3">
           <Link href="/" className="font-bold text-ink">vcglOne</Link>
-          <Link href="/api/auth/signout" className="text-sm font-semibold text-danger">Sign out</Link>
+          <Link href="/api/auth/signout" className="shrink-0 text-sm font-semibold text-danger">Sign out</Link>
         </div>
         <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {nav.map((item) => (
@@ -71,7 +73,9 @@ export async function DashboardShell({
           ))}
         </nav>
       </header>
-      <main className="px-4 py-6 lg:ml-72 lg:px-8 lg:py-8">{children}</main>
+      <main className="min-w-0 px-3 py-5 sm:px-4 sm:py-6 lg:ml-72 lg:px-8 lg:py-8">
+        <div className="mx-auto w-full max-w-[1600px] min-w-0">{children}</div>
+      </main>
     </div>
   );
 }

@@ -21,11 +21,11 @@ export default async function AdminLeaveRequestsPage({ searchParams }: { searchP
   return (
     <div className="space-y-6">
       <PageHeader title="Leave Requests" description="View, filter, approve, reject, and export leave requests." action={<LinkButton href={`/api/reports/leave?${query}`} variant="secondary">Export CSV</LinkButton>} />
-      <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft md:grid-cols-4">
-        <select className="rounded-md border border-line px-3 py-2 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
-        <select className="rounded-md border border-line px-3 py-2 text-sm" name="type" defaultValue={searchParams.type || ""}><option value="">All leave types</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select>
-        <select className="rounded-md border border-line px-3 py-2 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option>{Object.values(LeaveRequestStatus).map((status) => <option key={status}>{status}</option>)}</select>
-        <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
+      <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-2 xl:grid-cols-4">
+        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
+        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="type" defaultValue={searchParams.type || ""}><option value="">All leave types</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select>
+        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option>{Object.values(LeaveRequestStatus).map((status) => <option key={status}>{status}</option>)}</select>
+        <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
       </form>
       <Table>
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Dates</th><th className="px-4 py-3">Reason</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Action</th></tr></thead>
@@ -36,3 +36,6 @@ export default async function AdminLeaveRequestsPage({ searchParams }: { searchP
     </div>
   );
 }
+
+
+

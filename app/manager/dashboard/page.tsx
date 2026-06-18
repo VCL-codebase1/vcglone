@@ -21,7 +21,7 @@ export default async function ManagerDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Manager Dashboard" description="Team attendance visibility and pending leave approvals." />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Team members" value={teamCount} />
         <StatCard label="Checked in today" value={teamAttendance.filter((row) => row.checkInTime).length} />
         <StatCard label="Pending approvals" value={pendingLeave} />
@@ -37,3 +37,6 @@ export default async function ManagerDashboardPage() {
     </div>
   );
 }
+
+
+
