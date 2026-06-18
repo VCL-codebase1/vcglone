@@ -19,9 +19,6 @@ export default async function LoginPage() {
         </div>
         <Card>
           <LoginForm />
-          <div className="mt-5 rounded-md bg-surface p-3 text-xs text-muted">
-            Demo accounts use password <span className="font-semibold text-ink">Password123!</span>. See README for role-specific emails.
-          </div>
         </Card>
       </div>
     </main>
