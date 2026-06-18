@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR_ADMIN
+  SUPER_ADMIN
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum AttendanceStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  PRESENT
+  LATE
+  ABSENT
+  ON_LEAVE
+  PENDING_REVIEW
+  MANUALLY_ADJUSTED
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id               String             @id @default(cuid())
+  firstName        String
+  lastName         String
+  email            String             @unique
+  passwordHash     String
+  phone            String?
+  role             Role               @default(EMPLOYEE)
+  departmentId     String?
+  managerId        String?
+  employmentStatus EmploymentStatus   @default(ACTIVE)
+  jobTitle         String?
+  dateJoined       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  department        Department?        @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
+  manager           User?              @relation("ManagerReports", fields: [managerId], references: [id], onDelete: SetNull)
+  reports           User[]             @relation("ManagerReports")
+  managedDepartments Department[]      @relation("DepartmentManager")
+  attendanceRecords AttendanceRecord[] @relation("AttendanceEmployee")
+  adjustedRecords   AttendanceRecord[] @relation("AttendanceAdjustedBy")
+  leaveBalances     LeaveBalance[]
+  leaveRequests     LeaveRequest[]     @relation("LeaveEmployee")
+  managerApprovals  LeaveRequest[]     @relation("ManagerApprover")
+  hrApprovals       LeaveRequest[]     @relation("HrApprover")
+  auditLogs         AuditLog[]         @relation("AuditActor")
+
+  @@index([departmentId])
+  @@index([managerId])
+  @@index([role])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  managerId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager   User?  @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  employees User[] @relation("DepartmentEmployees")
+}
+
+model AttendanceRecord {
+  id                  String           @id @default(cuid())
+  employeeId          String
+  date                DateTime         @db.Date
+  checkInTime         DateTime?
+  checkOutTime        DateTime?
+  checkInLatitude     Float?
+  checkInLongitude    Float?
+  checkInAccuracy     Float?
+  checkOutLatitude    Float?
+  checkOutLongitude   Float?
+  checkOutAccuracy    Float?
+  checkInNote         String?
+  checkOutNote        String?
+  checkInUserAgent    String?
+  checkOutUserAgent   String?
+  status              AttendanceStatus @default(CHECKED_IN)
+  totalMinutes        Int?
+  requiresReview      Boolean          @default(false)
+  reviewReason        String?
+  manuallyAdjusted    Boolean          @default(false)
+  adjustedById        String?
+  adjustmentReason    String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  employee   User  @relation("AttendanceEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  adjustedBy User? @relation("AttendanceAdjustedBy", fields: [adjustedById], references: [id], onDelete: SetNull)
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([status])
+  @@index([requiresReview])
+}
+
+model LeaveType {
+  id                    String   @id @default(cuid())
+  name                  String   @unique
+  description           String?
+  annualEntitlementDays Int      @default(0)
+  requiresDocument      Boolean  @default(false)
+  requiresApproval      Boolean  @default(true)
+  isPaid                Boolean  @default(true)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+}
+
+model LeaveBalance {
+  id              String   @id @default(cuid())
+  employeeId      String
+  leaveTypeId     String
+  year            Int
+  entitlementDays Int
+  usedDays        Int      @default(0)
+  remainingDays   Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee  User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@index([year])
+}
+
+model LeaveRequest {
+  id                String             @id @default(cuid())
+  employeeId        String
+  leaveTypeId       String
+  startDate         DateTime           @db.Date
+  endDate           DateTime           @db.Date
+  totalDays         Int
+  reason            String
+  attachmentUrl     String?
+  status            LeaveRequestStatus @default(PENDING)
+  managerApproverId String?
+  hrApproverId      String?
+  approvalComment   String?
+  rejectionReason   String?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  employee        User      @relation("LeaveEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType       LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+  managerApprover User?     @relation("ManagerApprover", fields: [managerApproverId], references: [id], onDelete: SetNull)
+  hrApprover      User?     @relation("HrApprover", fields: [hrApproverId], references: [id], onDelete: SetNull)
+
+  @@index([employeeId, status])
+  @@index([startDate, endDate])
+  @@index([status])
+}
+
+model WorkPolicy {
+  id                 String   @id @default(cuid())
+  workStartTime      String   @default("09:00")
+  workEndTime        String   @default("17:00")
+  gracePeriodMinutes Int      @default(15)
+  timezone           String   @default("Africa/Lagos")
+  workingDays        String[] @default(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
