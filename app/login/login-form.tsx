@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { z } from "zod";
 import { Button, Input } from "@/components/ui";
 import { loginSchema } from "@/lib/validators";

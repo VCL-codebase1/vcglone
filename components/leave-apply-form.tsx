@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState, useTransition, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { z } from "zod";
 import { applyForLeave } from "@/lib/actions";
 import { Button, Card, Field, Input, Select, Textarea } from "@/components/ui";

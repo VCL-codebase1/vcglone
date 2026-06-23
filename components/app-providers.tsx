@@ -48,7 +48,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <ErrorBoundary FallbackComponent={AppFallback}>
       <QueryClientProvider client={queryClient}>
         {children}
-        <Toaster richColors closeButton position="top-right" />
+        <Toaster
+          closeButton
+          position="top-right"
+          toastOptions={{
+            duration: 5000,
+            style: {
+              fontFamily: "inherit",
+              padding: "14px 18px",
+              border: "1px solid var(--normal-border)",
+              background: "var(--normal-bg)",
+              color: "var(--normal-text)",
+              boxShadow: "0 12px 40px rgba(23, 32, 51, 0.08)"
+            }
+          }}
+        />
       </QueryClientProvider>
     </ErrorBoundary>
   );
