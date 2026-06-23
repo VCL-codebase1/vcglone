@@ -15,8 +15,8 @@ export default async function LoginPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <BrandLogo className="mx-auto w-52 sm:w-64" imageClassName="mx-auto" priority />
-          <h1 className="mt-2 text-3xl font-semibold text-ink">Sign in to your workspace</h1>
-          <p className="mt-2 text-sm text-muted">Attendance, leave governance, employee records, and approvals in one secure place.</p>
+          <h1 className="mt-2 text-3xl font-semibold text-ink">Welcome to VCGL</h1>
+          <p className="mt-2 text-sm text-muted">Sign in to the Vethan Concepts Group Limited workforce portal.</p>
         </div>
         <Card>
           <LoginForm />
