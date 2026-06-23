@@ -22,6 +22,22 @@ enum EmploymentStatus {
   TERMINATED
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_TO_SAY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  SEPARATED
+  DIVORCED
+  WIDOWED
+  PREFER_NOT_TO_SAY
+}
+
 enum AttendanceStatus {
   CHECKED_IN
   CHECKED_OUT
@@ -50,15 +66,23 @@ model User {
   role             Role               @default(EMPLOYEE)
   departmentId     String?
   managerId        String?
+  secondaryManagerId String?
   employmentStatus EmploymentStatus   @default(ACTIVE)
   jobTitle         String?
   dateJoined       DateTime?
+  dateOfBirth      DateTime?           @db.Date
+  gender           Gender?
+  maritalStatus    MaritalStatus?
+  aboutMe          String?
+  expertise        String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
   department        Department?        @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
   manager           User?              @relation("ManagerReports", fields: [managerId], references: [id], onDelete: SetNull)
   reports           User[]             @relation("ManagerReports")
+  secondaryManager  User?              @relation("SecondaryManagerReports", fields: [secondaryManagerId], references: [id], onDelete: SetNull)
+  secondaryReports  User[]             @relation("SecondaryManagerReports")
   managedDepartments Department[]      @relation("DepartmentManager")
   attendanceRecords AttendanceRecord[] @relation("AttendanceEmployee")
   adjustedRecords   AttendanceRecord[] @relation("AttendanceAdjustedBy")
@@ -67,10 +91,60 @@ model User {
   managerApprovals  LeaveRequest[]     @relation("ManagerApprover")
   hrApprovals       LeaveRequest[]     @relation("HrApprover")
   auditLogs         AuditLog[]         @relation("AuditActor")
+  workExperiences   WorkExperience[]
+  educationDetails  EducationDetail[]
+  dependents        Dependent[]
 
   @@index([departmentId])
   @@index([managerId])
+  @@index([secondaryManagerId])
   @@index([role])
+}
+
+model WorkExperience {
+  id             String   @id @default(cuid())
+  employeeId     String
+  companyName    String
+  jobTitle       String
+  fromDate       DateTime @db.Date
+  toDate         DateTime? @db.Date
+  jobDescription String?
+  relevant       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employee User @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model EducationDetail {
+  id               String   @id @default(cuid())
+  employeeId       String
+  instituteName    String
+  degree            String
+  specialization   String?
+  completionDate   DateTime? @db.Date
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee User @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model Dependent {
+  id           String   @id @default(cuid())
+  employeeId   String
+  name         String
+  relationship String
+  dateOfBirth  DateTime? @db.Date
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employee User @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
 }
 
 model Department {

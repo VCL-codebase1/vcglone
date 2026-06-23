@@ -5,7 +5,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { forwardRef, type ComponentProps, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
@@ -82,17 +82,18 @@ export function LinkButton({
   );
 }
 
-export function Input(props: ComponentProps<"input">) {
+export const Input = forwardRef<HTMLInputElement, ComponentPropsWithoutRef<"input">>(function Input({ className, ...props }, ref) {
   return (
     <input
+      ref={ref}
       {...props}
       className={cn(
         "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
-        props.className
+        className
       )}
     />
   );
-}
+});
 
 export function Select(props: ComponentProps<"select">) {
   return (

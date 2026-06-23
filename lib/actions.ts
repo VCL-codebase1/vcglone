@@ -12,6 +12,7 @@ import {
   approvalSchema,
   attendanceActionSchema,
   departmentSchema,
+  employeeSelfProfileSchema,
   employeeSchema,
   leaveRequestSchema,
   leaveTypeSchema,
@@ -25,6 +26,31 @@ type ActionResult = { ok: true; message: string } | { ok: false; message: string
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function formJsonArray(formData: FormData, key: string) {
+  const value = formString(formData, key);
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) throw new Error();
+    return parsed;
+  } catch {
+    throw new Error(`Invalid ${key} data.`);
+  }
+}
+
+function profileFormValues(formData: FormData) {
+  return {
+    dateOfBirth: formString(formData, "dateOfBirth"),
+    gender: formString(formData, "gender"),
+    maritalStatus: formString(formData, "maritalStatus"),
+    aboutMe: formString(formData, "aboutMe"),
+    expertise: formString(formData, "expertise"),
+    workExperiences: formJsonArray(formData, "workExperiences"),
+    educationDetails: formJsonArray(formData, "educationDetails"),
+    dependents: formJsonArray(formData, "dependents")
+  };
 }
 
 export async function submitAttendanceAction(input: unknown): Promise<ActionResult> {
@@ -312,25 +338,28 @@ export async function createEmployee(formData: FormData) {
     role: formString(formData, "role"),
     departmentId: formString(formData, "departmentId"),
     managerId: formString(formData, "managerId"),
+    secondaryManagerId: formString(formData, "secondaryManagerId"),
     employmentStatus: formString(formData, "employmentStatus"),
     jobTitle: formString(formData, "jobTitle"),
-    dateJoined: formString(formData, "dateJoined")
+    dateJoined: formString(formData, "dateJoined"),
+    ...profileFormValues(formData)
   });
 
   const passwordHash = await hash(parsed.password || "Password123!", 12);
+  const { password: _password, workExperiences, educationDetails, dependents, ...employeeData } = parsed;
   const employee = await prisma.user.create({
     data: {
-      firstName: parsed.firstName,
-      lastName: parsed.lastName,
-      email: parsed.email,
-      phone: parsed.phone,
+      ...employeeData,
       passwordHash,
-      role: parsed.role,
       departmentId: parsed.departmentId || null,
       managerId: parsed.managerId || null,
-      employmentStatus: parsed.employmentStatus,
-      jobTitle: parsed.jobTitle,
-      dateJoined: parsed.dateJoined
+      secondaryManagerId: parsed.secondaryManagerId || null,
+      dateOfBirth: parsed.dateOfBirth || null,
+      gender: parsed.gender || null,
+      maritalStatus: parsed.maritalStatus || null,
+      workExperiences: { create: workExperiences },
+      educationDetails: { create: educationDetails },
+      dependents: { create: dependents }
     }
   });
 
@@ -369,16 +398,27 @@ export async function updateEmployee(formData: FormData) {
     role: formString(formData, "role"),
     departmentId: formString(formData, "departmentId"),
     managerId: formString(formData, "managerId"),
+    secondaryManagerId: formString(formData, "secondaryManagerId"),
     employmentStatus: formString(formData, "employmentStatus"),
     jobTitle: formString(formData, "jobTitle"),
-    dateJoined: formString(formData, "dateJoined")
+    dateJoined: formString(formData, "dateJoined"),
+    ...profileFormValues(formData)
   });
+  const { workExperiences, educationDetails, dependents, ...employeeData } = parsed;
   const updated = await prisma.user.update({
     where: { id },
     data: {
-      ...parsed,
+      ...employeeData,
       departmentId: parsed.departmentId || null,
-      managerId: parsed.managerId || null
+      managerId: parsed.managerId || null,
+      secondaryManagerId: parsed.secondaryManagerId || null,
+      dateJoined: parsed.dateJoined || null,
+      dateOfBirth: parsed.dateOfBirth || null,
+      gender: parsed.gender || null,
+      maritalStatus: parsed.maritalStatus || null,
+      workExperiences: { deleteMany: {}, create: workExperiences },
+      educationDetails: { deleteMany: {}, create: educationDetails },
+      dependents: { deleteMany: {}, create: dependents }
     }
   });
   await createAuditLog({
@@ -389,6 +429,45 @@ export async function updateEmployee(formData: FormData) {
     metadata: { role: updated.role, employmentStatus: updated.employmentStatus }
   });
   revalidatePath(`/admin/employees/${id}`);
+}
+
+export async function updateOwnProfile(formData: FormData) {
+  const actor = await requireUser();
+  const parsed = employeeSelfProfileSchema.parse({
+    firstName: formString(formData, "firstName"),
+    lastName: formString(formData, "lastName"),
+    phone: formString(formData, "phone"),
+    ...profileFormValues(formData)
+  });
+  const { workExperiences, educationDetails, dependents, ...profile } = parsed;
+
+  await prisma.user.update({
+    where: { id: actor.id },
+    data: {
+      ...profile,
+      phone: profile.phone || null,
+      dateOfBirth: profile.dateOfBirth || null,
+      gender: profile.gender || null,
+      maritalStatus: profile.maritalStatus || null,
+      aboutMe: profile.aboutMe || null,
+      expertise: profile.expertise || null,
+      workExperiences: { deleteMany: {}, create: workExperiences },
+      educationDetails: { deleteMany: {}, create: educationDetails },
+      dependents: { deleteMany: {}, create: dependents }
+    }
+  });
+  await createAuditLog({
+    actorId: actor.id,
+    action: "EMPLOYEE_PROFILE_UPDATED",
+    entityType: "User",
+    entityId: actor.id,
+    metadata: {
+      workExperienceCount: workExperiences.length,
+      educationCount: educationDetails.length,
+      dependentCount: dependents.length
+    }
+  });
+  revalidatePath("/employee/profile");
 }
 
 export async function createDepartment(formData: FormData) {

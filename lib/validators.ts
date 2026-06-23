@@ -1,4 +1,4 @@
-import { AttendanceStatus, EmploymentStatus, LeaveRequestStatus, Role } from "@prisma/client";
+import { AttendanceStatus, EmploymentStatus, Gender, LeaveRequestStatus, MaritalStatus, Role } from "@prisma/client";
 import { z } from "zod";
 
 export const emailSchema = z.string().email().toLowerCase();
@@ -35,6 +35,57 @@ export const approvalSchema = z.object({
   comment: z.string().trim().max(1000).optional()
 });
 
+const optionalDateSchema = z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z.coerce.date().optional()
+);
+
+const optionalTextSchema = (max: number) => z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z.string().trim().max(max).optional()
+);
+
+export const workExperienceSchema = z
+  .object({
+    companyName: z.string().trim().min(2).max(150),
+    jobTitle: z.string().trim().min(2).max(150),
+    fromDate: z.coerce.date(),
+    toDate: optionalDateSchema,
+    jobDescription: optionalTextSchema(2000),
+    relevant: z.boolean().default(false)
+  })
+  .refine((value) => !value.toDate || value.toDate >= value.fromDate, {
+    path: ["toDate"],
+    message: "To date must be on or after from date."
+  });
+
+export const educationDetailSchema = z.object({
+  instituteName: z.string().trim().min(2).max(200),
+  degree: z.string().trim().min(2).max(150),
+  specialization: optionalTextSchema(150),
+  completionDate: optionalDateSchema
+});
+
+export const dependentSchema = z.object({
+  name: z.string().trim().min(2).max(150),
+  relationship: z.string().trim().min(2).max(100),
+  dateOfBirth: optionalDateSchema
+});
+
+export const profileCollectionsSchema = z.object({
+  workExperiences: z.array(workExperienceSchema).max(20),
+  educationDetails: z.array(educationDetailSchema).max(20),
+  dependents: z.array(dependentSchema).max(20)
+});
+
+export const personalProfileSchema = z.object({
+  dateOfBirth: optionalDateSchema,
+  gender: z.nativeEnum(Gender).optional(),
+  maritalStatus: z.nativeEnum(MaritalStatus).optional(),
+  aboutMe: optionalTextSchema(2000),
+  expertise: optionalTextSchema(1000)
+});
+
 export const employeeSchema = z.object({
   firstName: z.string().trim().min(2),
   lastName: z.string().trim().min(2),
@@ -44,10 +95,17 @@ export const employeeSchema = z.object({
   role: z.nativeEnum(Role),
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
+  secondaryManagerId: z.string().optional(),
   employmentStatus: z.nativeEnum(EmploymentStatus),
   jobTitle: z.string().trim().optional(),
-  dateJoined: z.coerce.date().optional()
-});
+  dateJoined: optionalDateSchema
+}).merge(personalProfileSchema).merge(profileCollectionsSchema);
+
+export const employeeSelfProfileSchema = z.object({
+  firstName: z.string().trim().min(2),
+  lastName: z.string().trim().min(2),
+  phone: z.string().trim().max(50).optional()
+}).merge(personalProfileSchema).merge(profileCollectionsSchema);
 
 export const departmentSchema = z.object({
   name: z.string().trim().min(2),
