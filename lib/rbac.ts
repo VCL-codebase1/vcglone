@@ -28,6 +28,12 @@ export function canManage(role: Role) {
   return managerRoles.includes(role as (typeof managerRoles)[number]);
 }
 
+export function canManageAccountRole(actorRole: Role, targetRole: Role) {
+  if (targetRole === Role.SUPER_ADMIN) return false;
+  if (actorRole === Role.SUPER_ADMIN) return true;
+  return actorRole === Role.HR_ADMIN && (targetRole === Role.EMPLOYEE || targetRole === Role.MANAGER);
+}
+
 export async function assertCanAccessEmployee(actorId: string, targetEmployeeId: string) {
   const actor = await prisma.user.findUnique({ where: { id: actorId }, select: { id: true, role: true } });
   if (!actor) throw new Error("Unauthorized");

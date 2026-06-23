@@ -7,8 +7,12 @@ import { Role } from "@prisma/client";
 export const runtime = "nodejs";
 
 export async function GET() {
-  await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
-  const employees = await prisma.user.findMany({ include: { department: true, manager: true }, orderBy: { firstName: "asc" } });
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  const employees = await prisma.user.findMany({
+    where: actor.role === Role.HR_ADMIN ? { role: { in: [Role.EMPLOYEE, Role.MANAGER] } } : undefined,
+    include: { department: true, manager: true },
+    orderBy: { firstName: "asc" }
+  });
   const csv = toCsv(employees.map((employee) => ({
     firstName: employee.firstName,
     lastName: employee.lastName,

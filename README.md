@@ -59,7 +59,7 @@ cp .env.example .env
 npm run prisma:migrate
 ```
 
-5. Seed demo data:
+5. Set the `BOOTSTRAP_SUPER_ADMIN_*` variables, then create the first Super Admin:
 
 ```bash
 npm run prisma:seed
@@ -162,19 +162,16 @@ The abstraction lives in `lib/storage.ts`. Production provider credentials must 
 
 Allowed file types: PDF, JPG, JPEG, PNG. File size is controlled by `MAX_FILE_UPLOAD_MB`.
 
-## Demo Accounts
+## Account Bootstrap
 
-All demo accounts use password:
+The seed command does not create demo employees, departments, attendance, leave, or known default passwords. It creates the first Super Admin only when no Super Admin exists. Configure these values before running it:
 
-```text
-Password123!
-```
+- `BOOTSTRAP_SUPER_ADMIN_EMAIL`
+- `BOOTSTRAP_SUPER_ADMIN_PASSWORD` (minimum 12 characters)
+- `BOOTSTRAP_SUPER_ADMIN_FIRST_NAME`
+- `BOOTSTRAP_SUPER_ADMIN_LAST_NAME`
 
-- Super Admin: `superadmin@vcglone.local`
-- HR Admin: `hr@vcglone.local`
-- Manager: `manager@vcglone.local`
-- Employee: `employee@vcglone.local`
-- Employee: `engineer@vcglone.local`
+After bootstrap, the Super Admin creates HR Admin, Manager, and Employee accounts from the admin console. HR Admin accounts can create and manage Employee and Manager accounts but cannot create, view for editing, promote, or modify Super Admin or other HR Admin accounts.
 
 ## Production Checklist
 

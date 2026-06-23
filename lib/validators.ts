@@ -91,7 +91,7 @@ export const employeeSchema = z.object({
   lastName: z.string().trim().min(2),
   email: emailSchema,
   phone: z.string().trim().optional(),
-  password: z.string().min(8).optional(),
+  password: z.string().min(12).optional(),
   role: z.nativeEnum(Role),
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
@@ -100,6 +100,10 @@ export const employeeSchema = z.object({
   jobTitle: z.string().trim().optional(),
   dateJoined: optionalDateSchema
 }).merge(personalProfileSchema).merge(profileCollectionsSchema);
+
+export const employeeCreateSchema = employeeSchema.extend({
+  password: z.string().min(12, "Use an initial password with at least 12 characters.")
+});
 
 export const employeeSelfProfileSchema = z.object({
   firstName: z.string().trim().min(2),

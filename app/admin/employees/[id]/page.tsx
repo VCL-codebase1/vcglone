@@ -4,11 +4,13 @@ import { updateEmployee } from "@/lib/actions";
 import { EmployeeProfileFields } from "@/components/employee-profile-fields";
 import { compactDuration, formatDate, formatTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { canManageAccountRole, requireRole } from "@/lib/rbac";
 import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Table } from "@/components/ui";
 
 export const runtime = "nodejs";
 
 export default async function EmployeeDetailPage({ params }: { params: { id: string } }) {
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const [employee, departments, managers, attendance, leaveRequests, balances] = await Promise.all([
     prisma.user.findUnique({
       where: { id: params.id },
@@ -21,6 +23,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
     prisma.leaveBalance.findMany({ where: { employeeId: params.id }, include: { leaveType: true } })
   ]);
   if (!employee) notFound();
+  if (!canManageAccountRole(actor.role, employee.role)) notFound();
   return (
     <div className="space-y-6">
       <PageHeader title={`${employee.firstName} ${employee.lastName}`} description="Employee profile, attendance history, leave history, and leave balances." />

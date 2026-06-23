@@ -1,4 +1,3 @@
-import type { Role as RoleType } from "@prisma/client";
 import { existsSync, readFileSync } from "fs";
 
 function loadLocalEnv() {
@@ -18,216 +17,68 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
-const { AttendanceStatus, Role } = require("@prisma/client");
 const { hash } = require("bcryptjs");
 const { prisma } = require("../lib/prisma");
 
-async function upsertUser(input: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: RoleType;
-  departmentId?: string;
-  managerId?: string;
-  jobTitle: string;
-}) {
-  const passwordHash = await hash("Password123!", 12);
-  return prisma.user.upsert({
-    where: { email: input.email },
-    update: {
-      firstName: input.firstName,
-      lastName: input.lastName,
-      role: input.role,
-      departmentId: input.departmentId,
-      managerId: input.managerId,
-      jobTitle: input.jobTitle,
-      employmentStatus: "ACTIVE"
-    },
-    create: {
-      ...input,
-      passwordHash,
-      dateJoined: new Date("2024-01-15"),
-      employmentStatus: "ACTIVE"
-    }
-  });
-}
-
 async function main() {
-  if (process.env.NODE_ENV === "production") {
-    console.warn("Refusing to seed while NODE_ENV=production. Create production users through a controlled admin process.");
+  const email = process.env.BOOTSTRAP_SUPER_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD;
+  const firstName = process.env.BOOTSTRAP_SUPER_ADMIN_FIRST_NAME?.trim() || "VCGL";
+  const lastName = process.env.BOOTSTRAP_SUPER_ADMIN_LAST_NAME?.trim() || "Administrator";
+
+  if (!email || !email.includes("@")) {
+    throw new Error("Set BOOTSTRAP_SUPER_ADMIN_EMAIL to a valid company email before running the bootstrap seed.");
+  }
+  if (!password || password.length < 12) {
+    throw new Error("Set BOOTSTRAP_SUPER_ADMIN_PASSWORD to a secure value with at least 12 characters.");
+  }
+
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { role: "SUPER_ADMIN" },
+    select: { id: true, email: true }
+  });
+  if (existingSuperAdmin) {
+    if (existingSuperAdmin.email !== email) {
+      throw new Error(`A Super Admin already exists as ${existingSuperAdmin.email}. Bootstrap will not create a second one.`);
+    }
+    console.log(`Super Admin ${email} already exists. No changes made.`);
     return;
   }
 
-  const operations = await prisma.department.upsert({
-    where: { name: "Operations" },
-    update: {},
-    create: { name: "Operations", description: "Field and operational teams" }
-  });
-  const people = await prisma.department.upsert({
-    where: { name: "People" },
-    update: {},
-    create: { name: "People", description: "Human resources and workforce administration" }
-  });
-  const engineering = await prisma.department.upsert({
-    where: { name: "Engineering" },
-    update: {},
-    create: { name: "Engineering", description: "Internal systems and platform delivery" }
-  });
+  const emailOwner = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (emailOwner) throw new Error("The bootstrap email already belongs to another account.");
 
-  const superAdmin = await upsertUser({
-    firstName: "Ada",
-    lastName: "Okafor",
-    email: "superadmin@vcglone.local",
-    role: Role.SUPER_ADMIN,
-    departmentId: people.id,
-    jobTitle: "Head of Systems"
-  });
-  const hrAdmin = await upsertUser({
-    firstName: "Maya",
-    lastName: "Mensah",
-    email: "hr@vcglone.local",
-    role: Role.HR_ADMIN,
-    departmentId: people.id,
-    managerId: superAdmin.id,
-    jobTitle: "HR Administrator"
-  });
-  const manager = await upsertUser({
-    firstName: "Tunde",
-    lastName: "Bello",
-    email: "manager@vcglone.local",
-    role: Role.MANAGER,
-    departmentId: operations.id,
-    managerId: hrAdmin.id,
-    jobTitle: "Operations Manager"
-  });
-  const employee = await upsertUser({
-    firstName: "Chika",
-    lastName: "Nwosu",
-    email: "employee@vcglone.local",
-    role: Role.EMPLOYEE,
-    departmentId: operations.id,
-    managerId: manager.id,
-    jobTitle: "Site Coordinator"
-  });
-  const engineer = await upsertUser({
-    firstName: "Ife",
-    lastName: "Adebayo",
-    email: "engineer@vcglone.local",
-    role: Role.EMPLOYEE,
-    departmentId: engineering.id,
-    managerId: manager.id,
-    jobTitle: "Systems Analyst"
-  });
-
-  await prisma.department.update({ where: { id: operations.id }, data: { managerId: manager.id } });
-  await prisma.department.update({ where: { id: people.id }, data: { managerId: hrAdmin.id } });
-
-  const leaveTypes = [
-    ["Annual Leave", 20, false, true],
-    ["Sick Leave", 10, true, true],
-    ["Casual Leave", 5, false, true],
-    ["Maternity Leave", 90, true, true],
-    ["Paternity Leave", 14, true, true],
-    ["Compassionate Leave", 5, false, true],
-    ["Study Leave", 10, true, true],
-    ["Unpaid Leave", 0, false, false],
-    ["Other", 0, false, true]
-  ] as const;
-
-  const createdTypes = [];
-  for (const [name, days, requiresDocument, isPaid] of leaveTypes) {
-    createdTypes.push(
-      await prisma.leaveType.upsert({
-        where: { name },
-        update: { annualEntitlementDays: days, requiresDocument, isPaid, active: true },
-        create: {
-          name,
-          description: `${name} entitlement`,
-          annualEntitlementDays: days,
-          requiresDocument,
-          requiresApproval: true,
-          isPaid,
-          active: true
-        }
-      })
-    );
-  }
-
-  const year = new Date().getFullYear();
-  for (const user of [superAdmin, hrAdmin, manager, employee, engineer]) {
-    for (const leaveType of createdTypes) {
-      await prisma.leaveBalance.upsert({
-        where: { employeeId_leaveTypeId_year: { employeeId: user.id, leaveTypeId: leaveType.id, year } },
-        update: {},
-        create: {
-          employeeId: user.id,
-          leaveTypeId: leaveType.id,
-          year,
-          entitlementDays: leaveType.annualEntitlementDays,
-          usedDays: 0,
-          remainingDays: leaveType.annualEntitlementDays
-        }
-      });
-    }
-  }
-
-  await prisma.workPolicy.upsert({
-    where: { id: "default-work-policy" },
-    update: {
-      workStartTime: "09:00",
-      workEndTime: "17:00",
-      gracePeriodMinutes: 15,
-      timezone: "Africa/Lagos",
-      workingDays: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
-    },
-    create: {
-      id: "default-work-policy",
-      workStartTime: "09:00",
-      workEndTime: "17:00",
-      gracePeriodMinutes: 15,
-      timezone: "Africa/Lagos",
-      workingDays: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
-    }
-  });
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  await prisma.attendanceRecord.upsert({
-    where: { employeeId_date: { employeeId: employee.id, date: today } },
-    update: {},
-    create: {
-      employeeId: employee.id,
-      date: today,
-      checkInTime: new Date(today.getTime() + 9 * 60 * 60 * 1000),
-      checkInLatitude: 6.5244,
-      checkInLongitude: 3.3792,
-      checkInAccuracy: 18,
-      checkInUserAgent: "Seeded browser",
-      status: AttendanceStatus.CHECKED_IN
+  const passwordHash = await hash(password, 12);
+  const administrator = await prisma.user.create({
+    data: {
+      firstName,
+      lastName,
+      email,
+      passwordHash,
+      role: "SUPER_ADMIN",
+      employmentStatus: "ACTIVE",
+      jobTitle: "System Administrator",
+      dateJoined: new Date()
     }
   });
 
   await prisma.auditLog.create({
     data: {
-      actorId: superAdmin.id,
-      action: "SEED_DATA_CREATED",
-      entityType: "System",
-      metadata: { users: 5, leaveTypes: createdTypes.length }
+      actorId: administrator.id,
+      action: "SUPER_ADMIN_BOOTSTRAPPED",
+      entityType: "User",
+      entityId: administrator.id,
+      metadata: { email: administrator.email }
     }
   });
-
-  console.log("Seed complete.");
-  console.log("Demo password for all accounts: Password123!");
-  console.log("superadmin@vcglone.local, hr@vcglone.local, manager@vcglone.local, employee@vcglone.local");
+  console.log(`Super Admin ${email} created successfully.`);
 }
 
 main()
   .catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-

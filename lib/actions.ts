@@ -7,11 +7,12 @@ import { redirect } from "next/navigation";
 import { createAuditLog } from "@/lib/audit";
 import { countWorkingDays, minutesBetween, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
-import { canAdmin, requireRole, requireUser } from "@/lib/rbac";
+import { canAdmin, canManageAccountRole, requireRole, requireUser } from "@/lib/rbac";
 import {
   approvalSchema,
   attendanceActionSchema,
   departmentSchema,
+  employeeCreateSchema,
   employeeSelfProfileSchema,
   employeeSchema,
   leaveRequestSchema,
@@ -329,7 +330,7 @@ export async function manuallyAdjustAttendance(formData: FormData) {
 
 export async function createEmployee(formData: FormData) {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
-  const parsed = employeeSchema.parse({
+  const parsed = employeeCreateSchema.parse({
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
     email: formString(formData, "email"),
@@ -344,8 +345,11 @@ export async function createEmployee(formData: FormData) {
     dateJoined: formString(formData, "dateJoined"),
     ...profileFormValues(formData)
   });
+  if (!canManageAccountRole(actor.role, parsed.role)) {
+    throw new Error("You do not have permission to create an account with this role.");
+  }
 
-  const passwordHash = await hash(parsed.password || "Password123!", 12);
+  const passwordHash = await hash(parsed.password, 12);
   const { password: _password, workExperiences, educationDetails, dependents, ...employeeData } = parsed;
   const employee = await prisma.user.create({
     data: {
@@ -390,6 +394,11 @@ export async function updateEmployee(formData: FormData) {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const id = formString(formData, "id");
   if (!id) throw new Error("Missing employee id.");
+  const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  if (!target) throw new Error("Employee not found.");
+  if (!canManageAccountRole(actor.role, target.role)) {
+    throw new Error("You do not have permission to manage this account.");
+  }
   const parsed = employeeSchema.omit({ password: true }).parse({
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
@@ -404,6 +413,9 @@ export async function updateEmployee(formData: FormData) {
     dateJoined: formString(formData, "dateJoined"),
     ...profileFormValues(formData)
   });
+  if (!canManageAccountRole(actor.role, parsed.role)) {
+    throw new Error("You do not have permission to assign this role.");
+  }
   const { workExperiences, educationDetails, dependents, ...employeeData } = parsed;
   const updated = await prisma.user.update({
     where: { id },
