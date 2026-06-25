@@ -13,6 +13,7 @@ export const attendanceActionSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90).optional(),
   longitude: z.coerce.number().min(-180).max(180).optional(),
   accuracy: z.coerce.number().nonnegative().optional(),
+  placeName: z.string().trim().max(500).optional(),
   note: z.string().trim().max(500).optional(),
   userAgent: z.string().max(1000).optional()
 });
@@ -103,6 +104,11 @@ export const employeeSchema = z.object({
 
 export const employeeCreateSchema = employeeSchema.extend({
   password: z.string().min(12, "Use an initial password with at least 12 characters.")
+});
+
+export const passwordResetSchema = z.object({
+  userId: z.string().min(1),
+  password: z.string().min(12, "Use a temporary password with at least 12 characters.")
 });
 
 export const employeeSelfProfileSchema = z.object({

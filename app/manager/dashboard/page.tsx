@@ -1,3 +1,5 @@
+import { Role } from "@prisma/client";
+import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { PageHeader, StatCard, StatusBadge, Table } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +10,9 @@ export const runtime = "nodejs";
 export default async function ManagerDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
-  const [teamCount, teamAttendance, pendingLeave] = await Promise.all([
+  const [selfAttendance, workPolicy, teamCount, teamAttendance, pendingLeave] = await Promise.all([
+    prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
+    prisma.workPolicy.findFirst(),
     prisma.user.count({ where: { managerId: user.id, employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.findMany({
       where: { date: today, employee: { managerId: user.id } },
@@ -17,10 +21,19 @@ export default async function ManagerDashboardPage() {
     }),
     prisma.leaveRequest.count({ where: { status: "PENDING", employee: { managerId: user.id } } })
   ]);
+  const nextAction = selfAttendance?.checkInTime && !selfAttendance.checkOutTime ? "check-out" : selfAttendance?.checkInTime && selfAttendance.checkOutTime ? "done" : "check-in";
+  const location = selfAttendance?.checkOutPlaceName
+    || selfAttendance?.checkInPlaceName
+    || (selfAttendance?.checkOutLatitude
+      ? `${selfAttendance.checkOutLatitude}, ${selfAttendance.checkOutLongitude}`
+      : selfAttendance?.checkInLatitude
+        ? `${selfAttendance.checkInLatitude}, ${selfAttendance.checkInLongitude}`
+        : undefined);
 
   return (
     <div className="space-y-6">
       <PageHeader title="Manager Dashboard" description="Team attendance visibility and pending leave approvals." />
+      {user.role !== Role.SUPER_ADMIN ? <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} /> : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Team members" value={teamCount} />
         <StatCard label="Checked in today" value={teamAttendance.filter((row) => row.checkInTime).length} />

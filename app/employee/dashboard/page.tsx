@@ -26,11 +26,13 @@ export default async function EmployeeDashboardPage() {
 
   const status = leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN";
   const nextAction = record?.checkInTime && !record.checkOutTime ? "check-out" : record?.checkInTime && record.checkOutTime ? "done" : "check-in";
-  const coords = record?.checkOutLatitude
-    ? `${record.checkOutLatitude}, ${record.checkOutLongitude}`
-    : record?.checkInLatitude
-      ? `${record.checkInLatitude}, ${record.checkInLongitude}`
-      : undefined;
+  const location = record?.checkOutPlaceName
+    || record?.checkInPlaceName
+    || (record?.checkOutLatitude
+      ? `${record.checkOutLatitude}, ${record.checkOutLongitude}`
+      : record?.checkInLatitude
+        ? `${record.checkInLatitude}, ${record.checkInLongitude}`
+        : undefined);
 
   return (
     <div className="space-y-6">
@@ -41,7 +43,7 @@ export default async function EmployeeDashboardPage() {
         <StatCard label="Check out" value={formatTime(record?.checkOutTime)} />
         <StatCard label="Duration" value={compactDuration(record?.totalMinutes)} />
       </div>
-      <AttendanceActionCard nextAction={nextAction} lastCoordinates={coords} workEndTime={workPolicy?.workEndTime} />
+      <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} />
       <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <Card>
           <div className="mb-4 flex items-center gap-2">

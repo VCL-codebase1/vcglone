@@ -16,11 +16,13 @@ export default async function EmployeeAttendancePage() {
     prisma.workPolicy.findFirst()
   ]);
   const nextAction = record?.checkInTime && !record.checkOutTime ? "check-out" : record?.checkInTime && record.checkOutTime ? "done" : "check-in";
-  const coords = record?.checkOutLatitude
-    ? `${record.checkOutLatitude}, ${record.checkOutLongitude}`
-    : record?.checkInLatitude
-      ? `${record.checkInLatitude}, ${record.checkInLongitude}`
-      : undefined;
+  const location = record?.checkOutPlaceName
+    || record?.checkInPlaceName
+    || (record?.checkOutLatitude
+      ? `${record.checkOutLatitude}, ${record.checkOutLongitude}`
+      : record?.checkInLatitude
+        ? `${record.checkInLatitude}, ${record.checkInLongitude}`
+        : undefined);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -32,7 +34,7 @@ export default async function EmployeeAttendancePage() {
         {record?.requiresReview ? <p className="sm:col-span-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-warning">Pending review: {record.reviewReason}</p> : null}
         {record?.updatedAt ? <p className="sm:col-span-3 text-xs text-muted">Last updated {formatDateTime(record.updatedAt)}</p> : null}
       </Card>
-      <AttendanceActionCard nextAction={nextAction} lastCoordinates={coords} workEndTime={workPolicy?.workEndTime} />
+      <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} />
     </div>
   );
 }

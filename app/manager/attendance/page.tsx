@@ -31,7 +31,7 @@ export default async function ManagerAttendancePage({ searchParams }: { searchPa
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">In</th><th className="px-4 py-3">Out</th><th className="px-4 py-3">Duration</th><th className="px-4 py-3">Location</th><th className="px-4 py-3">Status</th></tr></thead>
         <tbody className="divide-y divide-line">
           {records.map((record) => (
-            <tr key={record.id}><td className="px-4 py-3">{record.employee.firstName} {record.employee.lastName}</td><td className="px-4 py-3">{formatDate(record.date)}</td><td className="px-4 py-3">{formatTime(record.checkInTime)}</td><td className="px-4 py-3">{formatTime(record.checkOutTime)}</td><td className="px-4 py-3">{compactDuration(record.totalMinutes)}</td><td className="px-4 py-3">{record.checkInLatitude ? "Captured" : "Missing"}</td><td className="px-4 py-3"><StatusBadge value={record.status} /></td></tr>
+            <tr key={record.id}><td className="px-4 py-3">{record.employee.firstName} {record.employee.lastName}</td><td className="px-4 py-3">{formatDate(record.date)}</td><td className="px-4 py-3">{formatTime(record.checkInTime)}</td><td className="px-4 py-3">{formatTime(record.checkOutTime)}</td><td className="px-4 py-3">{compactDuration(record.totalMinutes)}</td><td className="max-w-xs px-4 py-3 text-muted">{record.checkOutPlaceName || record.checkInPlaceName || (record.checkInLatitude || record.checkOutLatitude ? "Captured" : "Missing")}</td><td className="px-4 py-3"><StatusBadge value={record.status} /></td></tr>
           ))}
         </tbody>
       </Table>

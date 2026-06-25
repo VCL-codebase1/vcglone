@@ -8,9 +8,30 @@ import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textar
 
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
-  lastCoordinates?: string;
+  lastLocation?: string;
   workEndTime?: string;
 };
+
+async function resolvePlaceName(coords: GeolocationCoordinates) {
+  const fallback = `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("lat", String(coords.latitude));
+    url.searchParams.set("lon", String(coords.longitude));
+    url.searchParams.set("zoom", "18");
+    url.searchParams.set("addressdetails", "1");
+
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) return fallback;
+
+    const data = await response.json() as { display_name?: string; name?: string };
+    return data.display_name || data.name || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function WorkdayCountdown({ workEndTime }: { workEndTime: string }) {
   const [now, setNow] = useState(new Date());
@@ -41,7 +62,7 @@ function WorkdayCountdown({ workEndTime }: { workEndTime: string }) {
   );
 }
 
-export function AttendanceActionCard({ nextAction, lastCoordinates, workEndTime = "17:00" }: Props) {
+export function AttendanceActionCard({ nextAction, lastLocation, workEndTime = "17:00" }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
@@ -54,11 +75,13 @@ export function AttendanceActionCard({ nextAction, lastCoordinates, workEndTime 
     setWarning("");
     const submit = (coords?: GeolocationCoordinates) => {
       startTransition(async () => {
+        const placeName = coords ? await resolvePlaceName(coords) : undefined;
         const result = await submitAttendanceAction({
           action: nextAction,
           latitude: coords?.latitude,
           longitude: coords?.longitude,
           accuracy: coords?.accuracy,
+          placeName,
           note,
           userAgent: navigator.userAgent
         });
@@ -118,7 +141,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates, workEndTime 
           </p>
         </div>
       </div>
-      {lastCoordinates ? <p className="rounded-md bg-surface px-3 py-2 text-sm text-muted">Last captured coordinates: {lastCoordinates}</p> : null}
+      {lastLocation ? <p className="rounded-md bg-surface px-3 py-2 text-sm text-muted">Last captured location: {lastLocation}</p> : null}
       {nextAction === "check-out" ? <WorkdayCountdown workEndTime={workEndTime} /> : null}
       {warning ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">

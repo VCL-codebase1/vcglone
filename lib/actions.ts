@@ -18,6 +18,7 @@ import {
   leaveRequestSchema,
   leaveTypeSchema,
   manualAttendanceSchema,
+  passwordResetSchema,
   workPolicySchema
 } from "@/lib/validators";
 import { getUploadConfig, uploadLeaveAttachment } from "@/lib/storage";
@@ -62,10 +63,11 @@ function addMonths(date: Date, months: number) {
 
 export async function submitAttendanceAction(input: unknown): Promise<ActionResult> {
   const user = await requireUser();
+  if (user.role === Role.SUPER_ADMIN) return { ok: false, message: "Super Admin accounts do not use attendance check-in." };
   const parsed = attendanceActionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Invalid attendance request." };
 
-  const { action, latitude, longitude, accuracy, note, userAgent } = parsed.data;
+  const { action, latitude, longitude, accuracy, placeName, note, userAgent } = parsed.data;
   const hasLocation = latitude !== undefined && longitude !== undefined;
   if (!hasLocation && !note?.trim()) {
     return { ok: false, message: "Add a note when location is unavailable." };
@@ -91,6 +93,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
         checkInLatitude: latitude,
         checkInLongitude: longitude,
         checkInAccuracy: accuracy,
+        checkInPlaceName: placeName,
         checkInNote: note,
         checkInUserAgent: userAgent,
         status: requiresReview ? AttendanceStatus.PENDING_REVIEW : AttendanceStatus.CHECKED_IN,
@@ -102,6 +105,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
         checkInLatitude: latitude,
         checkInLongitude: longitude,
         checkInAccuracy: accuracy,
+        checkInPlaceName: placeName,
         checkInNote: note,
         checkInUserAgent: userAgent,
         status: requiresReview ? AttendanceStatus.PENDING_REVIEW : AttendanceStatus.CHECKED_IN,
@@ -118,6 +122,9 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
       metadata: { hasLocation, accuracy }
     });
     revalidatePath("/employee/attendance");
+    revalidatePath("/employee/dashboard");
+    revalidatePath("/manager/dashboard");
+    revalidatePath("/admin/dashboard");
     return { ok: true, message: requiresReview ? "Checked in and marked pending review." : "Checked in successfully." };
   }
 
@@ -134,6 +141,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
       checkOutLatitude: latitude,
       checkOutLongitude: longitude,
       checkOutAccuracy: accuracy,
+      checkOutPlaceName: placeName,
       checkOutNote: note,
       checkOutUserAgent: userAgent,
       totalMinutes: minutesBetween(existing.checkInTime, now),
@@ -151,11 +159,15 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
     metadata: { hasLocation, accuracy, totalMinutes: record.totalMinutes }
   });
   revalidatePath("/employee/attendance");
+  revalidatePath("/employee/dashboard");
+  revalidatePath("/manager/dashboard");
+  revalidatePath("/admin/dashboard");
   return { ok: true, message: requiresReview ? "Checked out and marked pending review." : "Checked out successfully." };
 }
 
 export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
+  if (user.role !== Role.EMPLOYEE) return { ok: false, message: "Leave requests must be submitted from an employee account." };
   const parsed = leaveRequestSchema.safeParse({
     leaveTypeId: formString(formData, "leaveTypeId"),
     startDate: formString(formData, "startDate"),
@@ -203,14 +215,23 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   }
 
   if (leaveType.isPaid) {
-    const balance = await prisma.leaveBalance.findUnique({
+    const balance = await prisma.leaveBalance.upsert({
       where: {
         employeeId_leaveTypeId_year: {
           employeeId: user.id,
           leaveTypeId: leaveType.id,
           year: parsed.data.startDate.getFullYear()
         }
-      }
+      },
+      create: {
+        employeeId: user.id,
+        leaveTypeId: leaveType.id,
+        year: parsed.data.startDate.getFullYear(),
+        entitlementDays: leaveType.annualEntitlementDays,
+        usedDays: 0,
+        remainingDays: leaveType.annualEntitlementDays
+      },
+      update: {}
     });
     if (!balance || balance.remainingDays < totalDays) {
       return { ok: false, message: "Insufficient leave balance. Ask HR if an override is needed." };
@@ -240,7 +261,7 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
 }
 
 export async function decideLeaveRequest(formData: FormData) {
-  const actor = await requireRole([Role.MANAGER, Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const parsed = approvalSchema.safeParse({
     requestId: formString(formData, "requestId"),
     decision: formString(formData, "decision"),
@@ -253,7 +274,7 @@ export async function decideLeaveRequest(formData: FormData) {
     include: { employee: true, leaveType: true }
   });
   if (!request || request.status !== LeaveRequestStatus.PENDING) throw new Error("Leave request is not pending.");
-  if (actor.role === Role.MANAGER && request.employee.managerId !== actor.id) throw new Error("Only the assigned manager can decide this request.");
+  if (actor.id === request.employeeId) throw new Error("You cannot approve or reject your own leave request.");
 
   if (parsed.data.decision === "reject") {
     const updated = await prisma.leaveRequest.update({
@@ -286,6 +307,17 @@ export async function decideLeaveRequest(formData: FormData) {
         }
       });
       if (request.leaveType.isPaid) {
+        const balance = await tx.leaveBalance.findUnique({
+          where: {
+            employeeId_leaveTypeId_year: {
+              employeeId: request.employeeId,
+              leaveTypeId: request.leaveTypeId,
+              year: request.startDate.getFullYear()
+            }
+          }
+        });
+        if (!balance || balance.remainingDays < request.totalDays) throw new Error("Insufficient leave balance for approval.");
+
         await tx.leaveBalance.update({
           where: {
             employeeId_leaveTypeId_year: {
@@ -457,6 +489,28 @@ export async function updateEmployee(formData: FormData) {
     metadata: { role: updated.role, employmentStatus: updated.employmentStatus }
   });
   revalidatePath(`/admin/employees/${id}`);
+}
+
+export async function resetUserPassword(formData: FormData) {
+  const actor = await requireRole([Role.SUPER_ADMIN]);
+  const parsed = passwordResetSchema.parse({
+    userId: formString(formData, "userId"),
+    password: formString(formData, "password")
+  });
+  const target = await prisma.user.findUnique({ where: { id: parsed.userId }, select: { id: true, role: true, email: true } });
+  if (!target) throw new Error("Account not found.");
+  if (target.role === Role.SUPER_ADMIN) throw new Error("Super Admin passwords cannot be reset from this screen.");
+
+  const passwordHash = await hash(parsed.password, 12);
+  await prisma.user.update({ where: { id: target.id }, data: { passwordHash } });
+  await createAuditLog({
+    actorId: actor.id,
+    action: "USER_PASSWORD_RESET",
+    entityType: "User",
+    entityId: target.id,
+    metadata: { email: target.email, role: target.role }
+  });
+  revalidatePath(`/admin/employees/${target.id}`);
 }
 
 export async function updateOwnProfile(formData: FormData) {

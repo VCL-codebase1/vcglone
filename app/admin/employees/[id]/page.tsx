@@ -1,6 +1,6 @@
 import { EmploymentStatus, Role } from "@prisma/client";
 import { notFound } from "next/navigation";
-import { updateEmployee } from "@/lib/actions";
+import { resetUserPassword, updateEmployee } from "@/lib/actions";
 import { EmployeeProfileFields } from "@/components/employee-profile-fields";
 import { compactDuration, formatDate, formatTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -57,6 +57,19 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
         />
         <div className="md:col-span-2"><Button type="submit">Save changes</Button></div>
       </form>
+      {actor.role === Role.SUPER_ADMIN && employee.role !== Role.SUPER_ADMIN ? (
+        <Card className="space-y-4">
+          <div>
+            <h2 className="text-base font-semibold text-ink">Reset password</h2>
+            <p className="mt-1 text-sm text-muted">Users must contact an administrator when they lose access. Set a temporary password and share it securely.</p>
+          </div>
+          <form action={resetUserPassword} className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+            <input type="hidden" name="userId" value={employee.id} />
+            <Field label="New temporary password"><Input name="password" type="password" minLength={12} required /></Field>
+            <Button type="submit" variant="secondary">Reset password</Button>
+          </form>
+        </Card>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {balances.map((balance) => <Card key={balance.id}><p className="font-semibold">{balance.leaveType.name}</p><p className="mt-2 text-2xl font-semibold text-brand">{balance.remainingDays}</p><p className="text-sm text-muted">remaining of {balance.entitlementDays}</p></Card>)}
       </div>

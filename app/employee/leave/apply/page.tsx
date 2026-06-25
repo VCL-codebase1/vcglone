@@ -1,11 +1,14 @@
+import { Role } from "@prisma/client";
 import { LeaveApplyForm } from "@/components/leave-apply-form";
 import { PageHeader } from "@/components/ui";
 import { getUploadConfig } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/rbac";
 
 export const runtime = "nodejs";
 
 export default async function ApplyLeavePage() {
+  await requireRole([Role.EMPLOYEE]);
   const leaveTypes = await prisma.leaveType.findMany({ where: { active: true }, orderBy: { name: "asc" } });
   const uploadConfig = getUploadConfig();
   return (

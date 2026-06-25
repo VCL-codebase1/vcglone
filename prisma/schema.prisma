@@ -168,9 +168,11 @@ model AttendanceRecord {
   checkInLatitude     Float?
   checkInLongitude    Float?
   checkInAccuracy     Float?
+  checkInPlaceName    String?
   checkOutLatitude    Float?
   checkOutLongitude   Float?
   checkOutAccuracy    Float?
+  checkOutPlaceName   String?
   checkInNote         String?
   checkOutNote        String?
   checkInUserAgent    String?

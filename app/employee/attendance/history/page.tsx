@@ -31,6 +31,7 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
           <div className="space-y-3 md:hidden">
             {records.map((record) => {
               const hasLocation = Boolean(record.checkInLatitude || record.checkOutLatitude);
+              const location = record.checkOutPlaceName || record.checkInPlaceName || (hasLocation ? "Captured" : "Missing");
               const note = record.checkInNote || record.checkOutNote;
 
               return (
@@ -38,7 +39,7 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-ink">{formatDate(record.date)}</p>
-                      <p className="mt-1 text-xs text-muted">Location {hasLocation ? "captured" : "missing"}</p>
+                      <p className="mt-1 line-clamp-2 text-xs text-muted">{location}</p>
                     </div>
                     <StatusBadge value={record.status} />
                   </div>
@@ -71,7 +72,7 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
                     <td className="px-4 py-3">{formatTime(record.checkInTime)}</td>
                     <td className="px-4 py-3">{formatTime(record.checkOutTime)}</td>
                     <td className="px-4 py-3">{compactDuration(record.totalMinutes)}</td>
-                    <td className="px-4 py-3">{record.checkInLatitude || record.checkOutLatitude ? "Captured" : "Missing"}</td>
+                    <td className="max-w-xs px-4 py-3 text-muted">{record.checkOutPlaceName || record.checkInPlaceName || (record.checkInLatitude || record.checkOutLatitude ? "Captured" : "Missing")}</td>
                     <td className="px-4 py-3"><StatusBadge value={record.status} /></td>
                     <td className="max-w-xs px-4 py-3 text-muted">{record.checkInNote || record.checkOutNote || "-"}</td>
                   </tr>
