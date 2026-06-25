@@ -1,12 +1,13 @@
+import { Role } from "@prisma/client";
 import { Card, EmptyState, LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/rbac";
+import { requireRole } from "@/lib/rbac";
 
 export const runtime = "nodejs";
 
 export default async function EmployeeLeavePage() {
-  const user = await requireUser();
+  const user = await requireRole([Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]);
   const year = new Date().getFullYear();
   const [leaveTypes, balances, requests] = await Promise.all([
     prisma.leaveType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),

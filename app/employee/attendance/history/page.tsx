@@ -1,12 +1,13 @@
+import { Role } from "@prisma/client";
 import { Card, EmptyState, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { compactDuration, formatDate, formatTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/rbac";
+import { requireRole } from "@/lib/rbac";
 
 export const runtime = "nodejs";
 
 export default async function AttendanceHistoryPage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
-  const user = await requireUser();
+  const user = await requireRole([Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]);
   const records = await prisma.attendanceRecord.findMany({
     where: {
       employeeId: user.id,

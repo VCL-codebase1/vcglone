@@ -167,7 +167,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
 
 export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
-  if (user.role !== Role.EMPLOYEE) return { ok: false, message: "Leave requests must be submitted from an employee account." };
+  if (user.role === Role.SUPER_ADMIN) return { ok: false, message: "Leave requests are not available for this account." };
   const parsed = leaveRequestSchema.safeParse({
     leaveTypeId: formString(formData, "leaveTypeId"),
     startDate: formString(formData, "startDate"),

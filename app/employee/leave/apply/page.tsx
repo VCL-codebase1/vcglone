@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/rbac";
 export const runtime = "nodejs";
 
 export default async function ApplyLeavePage() {
-  await requireRole([Role.EMPLOYEE]);
+  await requireRole([Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]);
   const leaveTypes = await prisma.leaveType.findMany({ where: { active: true }, orderBy: { name: "asc" } });
   const uploadConfig = getUploadConfig();
   return (

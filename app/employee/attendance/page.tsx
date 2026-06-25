@@ -1,15 +1,16 @@
 import { format } from "date-fns";
+import { Role } from "@prisma/client";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { LiveClock } from "@/components/live-clock";
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { formatDateTime, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/rbac";
+import { requireRole } from "@/lib/rbac";
 
 export const runtime = "nodejs";
 
 export default async function EmployeeAttendancePage() {
-  const user = await requireUser();
+  const user = await requireRole([Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]);
   const today = todayDateOnly();
   const [record, workPolicy] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
