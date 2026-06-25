@@ -9,7 +9,7 @@ import { forwardRef, type ComponentProps, type ComponentPropsWithoutRef, type Re
 import { cn } from "@/lib/utils";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("min-w-0 rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5", className)}>{children}</section>;
+  return <section className={cn("min-w-0 rounded-2xl border border-white/70 bg-white/95 p-4 shadow-[0_16px_50px_rgba(23,32,51,0.07)] ring-1 ring-line/70 backdrop-blur sm:p-5", className)}>{children}</section>;
 }
 
 export function PageHeader({
@@ -22,9 +22,9 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex min-w-0 flex-col gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 shadow-[0_10px_32px_rgba(23,32,51,0.05)] ring-1 ring-line/60 backdrop-blur sm:flex-row sm:items-end sm:justify-between sm:p-5">
       <div className="min-w-0">
-        <h1 className="break-words text-xl font-semibold tracking-normal text-ink sm:text-2xl">{title}</h1>
+        <h1 className="break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
         {description ? <p className="mt-1 max-w-3xl break-words text-sm text-muted">{description}</p> : null}
       </div>
       {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}
@@ -33,13 +33,13 @@ export function PageHeader({
 }
 
 const buttonVariants = cva(
-  "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
+  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
   {
     variants: {
       variant: {
-        primary: "bg-brand text-white hover:bg-[#0b1f56]",
-        secondary: "border border-line bg-white text-ink hover:bg-surface",
-        danger: "bg-danger text-white hover:bg-red-800",
+        primary: "bg-brand text-white shadow-[0_10px_24px_rgba(16,43,116,0.18)] hover:-translate-y-0.5 hover:bg-[#0b1f56] hover:shadow-[0_14px_28px_rgba(16,43,116,0.22)]",
+        secondary: "border border-line bg-white text-ink shadow-[0_8px_20px_rgba(23,32,51,0.04)] hover:-translate-y-0.5 hover:bg-surface",
+        danger: "bg-amber-700 text-white shadow-[0_10px_24px_rgba(180,83,9,0.16)] hover:-translate-y-0.5 hover:bg-amber-800",
         ghost: "text-ink hover:bg-surface"
       }
     },
@@ -72,9 +72,9 @@ export function LinkButton({
   return (
     <Link
       className={cn(
-        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition max-[420px]:w-full",
-        variant === "primary" && "bg-brand text-white hover:bg-[#0b1f56]",
-        variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface",
+        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 max-[420px]:w-full",
+        variant === "primary" && "bg-brand text-white shadow-[0_10px_24px_rgba(16,43,116,0.18)] hover:-translate-y-0.5 hover:bg-[#0b1f56]",
+        variant === "secondary" && "border border-line bg-white text-ink shadow-[0_8px_20px_rgba(23,32,51,0.04)] hover:-translate-y-0.5 hover:bg-surface",
         className
       )}
       {...props}
@@ -88,7 +88,7 @@ export const Input = forwardRef<HTMLInputElement, ComponentPropsWithoutRef<"inpu
       ref={ref}
       {...props}
       className={cn(
-        "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
+        "focus-ring min-h-11 w-full min-w-0 rounded-xl border border-line bg-white/95 px-3.5 py-2.5 text-sm text-ink shadow-[0_6px_18px_rgba(23,32,51,0.03)] placeholder:text-slate-400 transition focus:border-brand/60 focus:bg-white",
         className
       )}
     />
@@ -99,7 +99,7 @@ export function Select(props: ComponentProps<"select">) {
   return (
     <select
       {...props}
-      className={cn("focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink", props.className)}
+      className={cn("focus-ring min-h-11 w-full min-w-0 rounded-xl border border-line bg-white/95 px-3.5 py-2.5 text-sm text-ink shadow-[0_6px_18px_rgba(23,32,51,0.03)] transition focus:border-brand/60 focus:bg-white", props.className)}
     />
   );
 }
@@ -109,7 +109,7 @@ export function Textarea(props: ComponentProps<"textarea">) {
     <textarea
       {...props}
       className={cn(
-        "focus-ring w-full min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400",
+        "focus-ring w-full min-w-0 rounded-xl border border-line bg-white/95 px-3.5 py-2.5 text-sm text-ink shadow-[0_6px_18px_rgba(23,32,51,0.03)] placeholder:text-slate-400 transition focus:border-brand/60 focus:bg-white",
         props.className
       )}
     />
@@ -134,14 +134,14 @@ export function StatusBadge({ value }: { value: string }) {
       : value.includes("PENDING") || value.includes("REVIEW") || value.includes("CHECKED_IN")
         ? "bg-amber-50 text-warning ring-amber-200"
         : value.includes("REJECTED") || value.includes("ABSENT")
-          ? "bg-red-50 text-danger ring-red-200"
+          ? "bg-amber-50 text-amber-800 ring-amber-200"
           : "bg-slate-100 text-slate-700 ring-slate-200";
   return <span className={cn("inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1", color)}>{normalized}</span>;
 }
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-line bg-white p-6 text-center sm:p-8">
+    <div className="rounded-2xl border border-dashed border-line bg-white/80 p-6 text-center shadow-[0_12px_38px_rgba(23,32,51,0.04)] sm:p-8">
       <p className="font-semibold text-ink">{title}</p>
       <p className="mt-1 text-sm text-muted">{description}</p>
     </div>
@@ -150,17 +150,20 @@ export function EmptyState({ title, description }: { title: string; description:
 
 export function StatCard({ label, value, detail }: { label: string; value: ReactNode; detail?: string }) {
   return (
-    <Card className="p-4">
+    <Card className="group overflow-hidden p-0 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_54px_rgba(23,32,51,0.09)]">
+      <div className="h-1 bg-gradient-to-r from-brand via-brand/60 to-emerald-500/60" />
+      <div className="p-4">
       <p className="text-sm font-medium text-muted">{label}</p>
       <p className="mt-2 break-words text-2xl font-semibold text-ink sm:text-3xl">{value}</p>
       {detail ? <p className="mt-1 text-xs text-muted">{detail}</p> : null}
+      </div>
     </Card>
   );
 }
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-white shadow-soft">
+    <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_16px_50px_rgba(23,32,51,0.07)] ring-1 ring-line/70">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] divide-y divide-line text-sm">{children}</table>
       </div>
@@ -188,7 +191,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-line bg-white p-5 shadow-soft outline-none",
+          "fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-white/80 bg-white p-5 shadow-[0_24px_80px_rgba(23,32,51,0.16)] ring-1 ring-line outline-none",
           className
         )}
       >
@@ -224,7 +227,7 @@ export function SheetContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-y-0 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-y-auto border-line bg-white p-4 shadow-soft outline-none",
+          "fixed inset-y-0 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-y-auto border-line bg-white p-4 shadow-[0_24px_80px_rgba(23,32,51,0.16)] outline-none",
           side === "left" ? "left-0 border-r" : "right-0 border-l",
           className
         )}
@@ -250,7 +253,7 @@ export function DrawerContent({ children, className, title }: { children: ReactN
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-lg border border-line bg-white p-4 shadow-soft outline-none",
+          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border border-line bg-white p-4 shadow-[0_-18px_60px_rgba(23,32,51,0.14)] outline-none",
           className
         )}
       >

@@ -12,9 +12,8 @@ export const runtime = "nodejs";
 export default async function AdminDashboardPage() {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const today = todayDateOnly();
-  const [selfAttendance, workPolicy, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance] = await Promise.all([
+  const [selfAttendance, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: actor.id, date: today } } }),
-    prisma.workPolicy.findFirst(),
     prisma.user.count({ where: { employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.count({ where: { date: today, checkInTime: { not: null } } }),
     prisma.attendanceRecord.count({ where: { date: today, checkOutTime: { not: null } } }),
@@ -41,7 +40,15 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Admin Dashboard" description="Organization-wide attendance, leave, and workforce operations overview." action={<SystemPulse />} />
-      {actor.role !== Role.SUPER_ADMIN ? <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} /> : null}
+      {actor.role !== Role.SUPER_ADMIN ? (
+        <AttendanceActionCard
+          nextAction={nextAction}
+          lastLocation={location}
+          checkedInAt={selfAttendance?.checkInTime?.toISOString()}
+          checkedOutAt={selfAttendance?.checkOutTime?.toISOString()}
+          totalMinutes={selfAttendance?.totalMinutes}
+        />
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total employees" value={totalEmployees} />
         <StatCard label="Checked in today" value={checkedIn} />

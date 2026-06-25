@@ -9,7 +9,9 @@ import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textar
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
   lastLocation?: string;
-  workEndTime?: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  totalMinutes?: number | null;
 };
 
 async function resolvePlaceName(coords: GeolocationCoordinates) {
@@ -33,36 +35,39 @@ async function resolvePlaceName(coords: GeolocationCoordinates) {
   }
 }
 
-function WorkdayCountdown({ workEndTime }: { workEndTime: string }) {
+function formatElapsedTime(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes }: { checkedInAt?: string; checkedOutAt?: string; totalMinutes?: number | null }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
+    if (checkedOutAt) return undefined;
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [checkedOutAt]);
 
-  const [hours, minutes] = workEndTime.split(":").map(Number);
-  const target = new Date(now);
-  target.setHours(hours || 17, minutes || 0, 0, 0);
-  const remainingSeconds = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
-  const remainingHours = Math.floor(remainingSeconds / 3600);
-  const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60);
-  const seconds = remainingSeconds % 60;
+  if (!checkedInAt) return null;
+
+  const start = new Date(checkedInAt).getTime();
+  const end = checkedOutAt ? new Date(checkedOutAt).getTime() : now.getTime();
+  const elapsedSeconds = totalMinutes && checkedOutAt ? totalMinutes * 60 : Math.max(0, Math.floor((end - start) / 1000));
+  const isComplete = Boolean(checkedOutAt);
 
   return (
     <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-brand">Workday countdown</p>
-      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">
-        {remainingSeconds > 0
-          ? `${String(remainingHours).padStart(2, "0")}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-          : "00:00:00"}
-      </p>
-      <p className="mt-1 text-sm text-muted">{remainingSeconds > 0 ? `Until ${workEndTime}` : "Workday complete. Check out when ready."}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand">Working time</p>
+      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{formatElapsedTime(elapsedSeconds)}</p>
+      <p className="mt-1 text-sm text-muted">{isComplete ? "Final time recorded at check-out." : "Counting from your check-in time."}</p>
     </div>
   );
 }
 
-export function AttendanceActionCard({ nextAction, lastLocation, workEndTime = "17:00" }: Props) {
+export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
@@ -142,7 +147,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, workEndTime = "
         </div>
       </div>
       {lastLocation ? <p className="rounded-md bg-surface px-3 py-2 text-sm text-muted">Last captured location: {lastLocation}</p> : null}
-      {nextAction === "check-out" ? <WorkdayCountdown workEndTime={workEndTime} /> : null}
+      {checkedInAt ? <WorkingTimeCounter checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} /> : null}
       {warning ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
           <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

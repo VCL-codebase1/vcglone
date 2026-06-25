@@ -10,9 +10,8 @@ export const runtime = "nodejs";
 export default async function ManagerDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
-  const [selfAttendance, workPolicy, teamCount, teamAttendance, pendingLeave] = await Promise.all([
+  const [selfAttendance, teamCount, teamAttendance, pendingLeave] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
-    prisma.workPolicy.findFirst(),
     prisma.user.count({ where: { managerId: user.id, employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.findMany({
       where: { date: today, employee: { managerId: user.id } },
@@ -33,7 +32,15 @@ export default async function ManagerDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Manager Dashboard" description="Team attendance visibility and pending leave approvals." />
-      {user.role !== Role.SUPER_ADMIN ? <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} /> : null}
+      {user.role !== Role.SUPER_ADMIN ? (
+        <AttendanceActionCard
+          nextAction={nextAction}
+          lastLocation={location}
+          checkedInAt={selfAttendance?.checkInTime?.toISOString()}
+          checkedOutAt={selfAttendance?.checkOutTime?.toISOString()}
+          totalMinutes={selfAttendance?.totalMinutes}
+        />
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Team members" value={teamCount} />
         <StatCard label="Checked in today" value={teamAttendance.filter((row) => row.checkInTime).length} />

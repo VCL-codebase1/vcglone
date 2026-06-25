@@ -20,8 +20,15 @@ body {
   margin: 0;
   color: #172033;
   background:
-    radial-gradient(circle at top left, rgba(16, 43, 116, 0.08), transparent 28rem),
+    radial-gradient(circle at top left, rgba(16, 43, 116, 0.12), transparent 30rem),
+    radial-gradient(circle at bottom right, rgba(4, 120, 87, 0.08), transparent 28rem),
+    linear-gradient(180deg, #fbfdff 0%, #f7f9fc 42%, #f3f7fc 100%),
     #f7f9fc;
+}
+
+::selection {
+  background: rgba(16, 43, 116, 0.16);
+  color: #102b74;
 }
 
 button,
@@ -33,7 +40,7 @@ textarea {
 
 @layer components {
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand/80 focus:ring-offset-2 focus:ring-offset-white;
   }
 }
 

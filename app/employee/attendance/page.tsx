@@ -12,10 +12,7 @@ export const runtime = "nodejs";
 export default async function EmployeeAttendancePage() {
   const user = await requireRole([Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]);
   const today = todayDateOnly();
-  const [record, workPolicy] = await Promise.all([
-    prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
-    prisma.workPolicy.findFirst()
-  ]);
+  const record = await prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } });
   const nextAction = record?.checkInTime && !record.checkOutTime ? "check-out" : record?.checkInTime && record.checkOutTime ? "done" : "check-in";
   const location = record?.checkOutPlaceName
     || record?.checkInPlaceName
@@ -35,7 +32,13 @@ export default async function EmployeeAttendancePage() {
         {record?.requiresReview ? <p className="sm:col-span-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-warning">Pending review: {record.reviewReason}</p> : null}
         {record?.updatedAt ? <p className="sm:col-span-3 text-xs text-muted">Last updated {formatDateTime(record.updatedAt)}</p> : null}
       </Card>
-      <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} />
+      <AttendanceActionCard
+        nextAction={nextAction}
+        lastLocation={location}
+        checkedInAt={record?.checkInTime?.toISOString()}
+        checkedOutAt={record?.checkOutTime?.toISOString()}
+        totalMinutes={record?.totalMinutes}
+      />
     </div>
   );
 }

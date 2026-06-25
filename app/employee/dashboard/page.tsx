@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export default async function EmployeeDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
-  const [record, leaveToday, recentAttendance, balances, leaveRequests, workPolicy] = await Promise.all([
+  const [record, leaveToday, recentAttendance, balances, leaveRequests] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
     prisma.leaveRequest.findFirst({
       where: { employeeId: user.id, status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } },
@@ -20,8 +20,7 @@ export default async function EmployeeDashboardPage() {
     }),
     prisma.attendanceRecord.findMany({ where: { employeeId: user.id }, orderBy: { date: "desc" }, take: 5 }),
     prisma.leaveBalance.findMany({ where: { employeeId: user.id, year: new Date().getFullYear() }, include: { leaveType: true }, take: 4 }),
-    prisma.leaveRequest.findMany({ where: { employeeId: user.id }, include: { leaveType: true }, orderBy: { createdAt: "desc" }, take: 5 }),
-    prisma.workPolicy.findFirst()
+    prisma.leaveRequest.findMany({ where: { employeeId: user.id }, include: { leaveType: true }, orderBy: { createdAt: "desc" }, take: 5 })
   ]);
 
   const status = leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN";
@@ -43,7 +42,13 @@ export default async function EmployeeDashboardPage() {
         <StatCard label="Check out" value={formatTime(record?.checkOutTime)} />
         <StatCard label="Duration" value={compactDuration(record?.totalMinutes)} />
       </div>
-      <AttendanceActionCard nextAction={nextAction} lastLocation={location} workEndTime={workPolicy?.workEndTime} />
+      <AttendanceActionCard
+        nextAction={nextAction}
+        lastLocation={location}
+        checkedInAt={record?.checkInTime?.toISOString()}
+        checkedOutAt={record?.checkOutTime?.toISOString()}
+        totalMinutes={record?.totalMinutes}
+      />
       <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <Card>
           <div className="mb-4 flex items-center gap-2">
