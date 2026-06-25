@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui";
+import { PwaRegister } from "@/components/pwa-register";
 
 function AppFallback({ error, resetErrorBoundary }: FallbackProps) {
   const message = error instanceof Error ? error.message : "The app could not finish this request.";
@@ -47,6 +48,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary FallbackComponent={AppFallback}>
       <QueryClientProvider client={queryClient}>
+        <PwaRegister />
         {children}
         <Toaster
           closeButton
