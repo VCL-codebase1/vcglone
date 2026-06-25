@@ -94,6 +94,7 @@ model User {
   workExperiences   WorkExperience[]
   educationDetails  EducationDetail[]
   dependents        Dependent[]
+  notifications     Notification[]
 
   @@index([departmentId])
   @@index([managerId])
@@ -286,5 +287,20 @@ model AuditLog {
   @@index([actorId])
   @@index([action])
   @@index([entityType])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
   @@index([createdAt])
 }

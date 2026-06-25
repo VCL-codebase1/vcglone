@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAuditLog } from "@/lib/audit";
 import { countWorkingDays, minutesBetween, todayDateOnly } from "@/lib/dates";
+import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { canAdmin, canManageAccountRole, requireRole, requireUser } from "@/lib/rbac";
 import {
@@ -59,6 +60,18 @@ function addMonths(date: Date, months: number) {
   const next = new Date(date);
   next.setMonth(next.getMonth() + months);
   return next;
+}
+
+function selfServiceLeaveHref(role: Role) {
+  if (role === Role.HR_ADMIN) return "/admin/my-leave";
+  if (role === Role.MANAGER) return "/manager/my-leave";
+  return "/employee/leave";
+}
+
+function selfServiceProfileHref(role: Role) {
+  if (role === Role.HR_ADMIN) return "/admin/profile";
+  if (role === Role.MANAGER) return "/manager/profile";
+  return "/employee/profile";
 }
 
 export async function submitAttendanceAction(input: unknown): Promise<ActionResult> {
@@ -294,6 +307,12 @@ export async function decideLeaveRequest(formData: FormData) {
       entityId: updated.id,
       metadata: { reason: updated.rejectionReason }
     });
+    await createNotification({
+      userId: request.employeeId,
+      title: "Leave request rejected",
+      message: `${request.leaveType.name} for ${request.totalDays} day${request.totalDays === 1 ? "" : "s"} was rejected.${updated.rejectionReason ? ` Reason: ${updated.rejectionReason}` : ""}`,
+      href: selfServiceLeaveHref(request.employee.role)
+    });
   } else {
     await prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
@@ -341,6 +360,12 @@ export async function decideLeaveRequest(formData: FormData) {
           metadata: { totalDays: request.totalDays }
         }
       });
+    });
+    await createNotification({
+      userId: request.employeeId,
+      title: "Leave request approved",
+      message: `${request.leaveType.name} for ${request.totalDays} day${request.totalDays === 1 ? "" : "s"} was approved.` ,
+      href: selfServiceLeaveHref(request.employee.role)
     });
   }
 
@@ -510,7 +535,34 @@ export async function resetUserPassword(formData: FormData) {
     entityId: target.id,
     metadata: { email: target.email, role: target.role }
   });
+  await createNotification({
+    userId: target.id,
+    title: "Password reset by administrator",
+    message: "Your password was reset by a Super Admin. Sign in with the temporary password shared with you and request a change if needed.",
+    href: selfServiceProfileHref(target.role)
+  });
   revalidatePath(`/admin/employees/${target.id}`);
+}
+
+export async function markNotificationRead(formData: FormData) {
+  const actor = await requireUser();
+  const id = formString(formData, "id");
+  if (!id) throw new Error("Missing notification id.");
+
+  await prisma.notification.updateMany({
+    where: { id, userId: actor.id, readAt: null },
+    data: { readAt: new Date() }
+  });
+  revalidatePath("/");
+}
+
+export async function markAllNotificationsRead() {
+  const actor = await requireUser();
+  await prisma.notification.updateMany({
+    where: { userId: actor.id, readAt: null },
+    data: { readAt: new Date() }
+  });
+  revalidatePath("/");
 }
 
 export async function updateOwnProfile(formData: FormData) {

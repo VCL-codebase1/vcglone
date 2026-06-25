@@ -15,10 +15,10 @@ const adminNav = [
 ];
 
 const hrSelfServiceNav = [
-  { href: "/employee/attendance", label: "My Attendance", icon: "attendance" as const },
-  { href: "/employee/attendance/history", label: "My History", icon: "reports" as const },
-  { href: "/employee/leave", label: "My Leave", icon: "leave" as const },
-  { href: "/employee/profile", label: "My Profile", icon: "users" as const }
+  { href: "/admin/my-attendance", label: "My Attendance", icon: "attendance" as const },
+  { href: "/admin/my-attendance/history", label: "My History", icon: "reports" as const },
+  { href: "/admin/my-leave", label: "My Leave", icon: "leave" as const },
+  { href: "/admin/profile", label: "My Profile", icon: "users" as const }
 ];
 
 export const dynamic = "force-dynamic";
