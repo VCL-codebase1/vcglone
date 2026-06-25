@@ -14,6 +14,7 @@ type LeaveTypeOption = {
   name: string;
   requiresDocument: boolean;
   annualEntitlementDays: number;
+  eligibilityMonths: number;
 };
 
 type LeaveRequestValues = z.infer<typeof leaveRequestSchema>;
@@ -77,6 +78,8 @@ export function LeaveApplyForm({ leaveTypes, uploadEnabled }: { leaveTypes: Leav
         </Field>
         <div className="rounded-md bg-surface px-3 py-2 text-sm text-muted">
           Annual entitlement: <span className="font-semibold text-ink">{selectedType?.annualEntitlementDays ?? 0} days</span>
+          <br />
+          Qualifies after: <span className="font-semibold text-ink">{selectedType?.eligibilityMonths === 12 ? "1 year" : `${selectedType?.eligibilityMonths ?? 1} month${selectedType?.eligibilityMonths === 1 ? "" : "s"}`}</span>
         </div>
         <Field label="Start date">
           <Input type="date" required {...register("startDate", { valueAsDate: true })} />

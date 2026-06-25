@@ -54,6 +54,12 @@ function profileFormValues(formData: FormData) {
   };
 }
 
+function addMonths(date: Date, months: number) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
 export async function submitAttendanceAction(input: unknown): Promise<ActionResult> {
   const user = await requireUser();
   const parsed = attendanceActionSchema.safeParse(input);
@@ -158,8 +164,18 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message || "Invalid leave request." };
 
-  const leaveType = await prisma.leaveType.findUnique({ where: { id: parsed.data.leaveTypeId } });
+  const [leaveType, employee] = await Promise.all([
+    prisma.leaveType.findUnique({ where: { id: parsed.data.leaveTypeId } }),
+    prisma.user.findUnique({ where: { id: user.id }, select: { dateJoined: true } })
+  ]);
   if (!leaveType || !leaveType.active) return { ok: false, message: "Selected leave type is unavailable." };
+  if (!employee?.dateJoined) return { ok: false, message: "Your joining date is missing. Ask HR to update your profile before applying." };
+
+  const eligibleAt = addMonths(employee.dateJoined, leaveType.eligibilityMonths);
+  if (new Date() < eligibleAt) {
+    const label = leaveType.eligibilityMonths === 12 ? "1 year" : `${leaveType.eligibilityMonths} month${leaveType.eligibilityMonths === 1 ? "" : "s"}`;
+    return { ok: false, message: `You qualify for ${leaveType.name} after ${label} of employment.` };
+  }
 
   const totalDays = countWorkingDays(parsed.data.startDate, parsed.data.endDate);
   if (totalDays < 1) return { ok: false, message: "Leave request must include at least one working day." };
@@ -502,6 +518,7 @@ export async function createLeaveType(formData: FormData) {
     name: formString(formData, "name"),
     description: formString(formData, "description"),
     annualEntitlementDays: formString(formData, "annualEntitlementDays"),
+    eligibilityMonths: formString(formData, "eligibilityMonths"),
     requiresDocument: formData.has("requiresDocument"),
     requiresApproval: !formData.has("requiresApproval") ? true : formData.has("requiresApproval"),
     isPaid: formData.has("isPaid"),

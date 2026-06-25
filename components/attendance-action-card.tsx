@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, LocateFixed, MapPinOff } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "@/lib/toast";
 import { submitAttendanceAction } from "@/lib/actions";
 import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textarea } from "@/components/ui";
@@ -9,12 +9,43 @@ import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textar
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
   lastCoordinates?: string;
+  workEndTime?: string;
 };
 
-export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
+function WorkdayCountdown({ workEndTime }: { workEndTime: string }) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const [hours, minutes] = workEndTime.split(":").map(Number);
+  const target = new Date(now);
+  target.setHours(hours || 17, minutes || 0, 0, 0);
+  const remainingSeconds = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+  const remainingHours = Math.floor(remainingSeconds / 3600);
+  const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60);
+  const seconds = remainingSeconds % 60;
+
+  return (
+    <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand">Workday countdown</p>
+      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">
+        {remainingSeconds > 0
+          ? `${String(remainingHours).padStart(2, "0")}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+          : "00:00:00"}
+      </p>
+      <p className="mt-1 text-sm text-muted">{remainingSeconds > 0 ? `Until ${workEndTime}` : "Workday complete. Check out when ready."}</p>
+    </div>
+  );
+}
+
+export function AttendanceActionCard({ nextAction, lastCoordinates, workEndTime = "17:00" }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
+  const [locationUnavailable, setLocationUnavailable] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -34,6 +65,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
         if (result.ok) {
           setMessage(result.message);
           setNote("");
+          setLocationUnavailable(false);
           setDialogOpen(false);
           toast.success(result.message);
         } else {
@@ -43,9 +75,18 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
       });
     };
 
-    if (!navigator.geolocation) {
-      setWarning("Location is unavailable on this device. Add a note and submit again.");
+    if (locationUnavailable) {
+      if (!note.trim()) {
+        setWarning("Add a note so attendance can be submitted for review.");
+        return;
+      }
       submit();
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setWarning("Location is unavailable on this device. Add a note to submit for review.");
+      setLocationUnavailable(true);
       return;
     }
 
@@ -54,7 +95,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
       () => {
         setWarning("Location permission was denied or unavailable. Add a note to submit for review.");
         toast.warning("Location unavailable", { description: "Add a note so attendance can be submitted for review." });
-        submit();
+        setLocationUnavailable(true);
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
@@ -78,13 +119,7 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
         </div>
       </div>
       {lastCoordinates ? <p className="rounded-md bg-surface px-3 py-2 text-sm text-muted">Last captured coordinates: {lastCoordinates}</p> : null}
-      <Textarea
-        value={note}
-        onChange={(event) => setNote(event.target.value)}
-        placeholder="Optional note. Required if location is unavailable."
-        rows={4}
-        disabled={disabled || pending}
-      />
+      {nextAction === "check-out" ? <WorkdayCountdown workEndTime={workEndTime} /> : null}
       {warning ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
           <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -103,15 +138,31 @@ export function AttendanceActionCard({ nextAction, lastCoordinates }: Props) {
           description="Your browser will ask for location once for this attendance action."
         >
           <div className="space-y-4">
+            {locationUnavailable ? (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
+                  <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <span>{warning || "Location is unavailable. Add a note to submit for review."}</span>
+                </div>
+                <Textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Required note for review because location is unavailable."
+                  rows={4}
+                  disabled={disabled || pending}
+                  required
+                />
+              </div>
+            ) : null}
             <p className="text-sm text-muted">
-              vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, device information, and your optional note. It does not track your movement continuously.
+              vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, and device information. It does not track your movement continuously.
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <DialogClose asChild>
                 <Button type="button" variant="secondary">Cancel</Button>
               </DialogClose>
               <Button type="button" disabled={pending} onClick={captureAndSubmit}>
-                {pending ? "Submitting..." : "Continue"}
+                {pending ? "Submitting..." : locationUnavailable ? "Submit for review" : "Continue"}
               </Button>
             </div>
           </div>

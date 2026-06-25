@@ -199,6 +199,7 @@ model LeaveType {
   name                  String   @unique
   description           String?
   annualEntitlementDays Int      @default(0)
+  eligibilityMonths     Int      @default(1)
   requiresDocument      Boolean  @default(false)
   requiresApproval      Boolean  @default(true)
   isPaid                Boolean  @default(true)

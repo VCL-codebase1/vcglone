@@ -1,0 +1,1 @@
+ALTER TABLE "LeaveType" ADD COLUMN "eligibilityMonths" INTEGER NOT NULL DEFAULT 1;
