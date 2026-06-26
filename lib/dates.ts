@@ -1,22 +1,56 @@
-import { differenceInCalendarDays, eachDayOfInterval, format, isWeekend, startOfDay } from "date-fns";
+import { differenceInCalendarDays, eachDayOfInterval, isWeekend } from "date-fns";
+
+const appTimeZone = process.env.APP_TIMEZONE || "Africa/Lagos";
+
+function datePartsInAppTimeZone(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: appTimeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value)
+  };
+}
 
 export function todayDateOnly() {
-  return startOfDay(new Date());
+  const { year, month, day } = datePartsInAppTimeZone(new Date());
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 export function formatDate(date: Date | string | null | undefined) {
   if (!date) return "-";
-  return format(new Date(date), "MMM d, yyyy");
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: appTimeZone,
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(new Date(date));
 }
 
 export function formatDateTime(date: Date | string | null | undefined) {
   if (!date) return "-";
-  return format(new Date(date), "MMM d, yyyy h:mm a");
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: appTimeZone,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(date));
 }
 
 export function formatTime(date: Date | string | null | undefined) {
   if (!date) return "-";
-  return format(new Date(date), "h:mm a");
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: appTimeZone,
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(date));
 }
 
 export function minutesBetween(start: Date, end: Date) {
