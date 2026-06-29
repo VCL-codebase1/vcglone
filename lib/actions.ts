@@ -404,6 +404,7 @@ export async function manuallyAdjustAttendance(formData: FormData) {
 export async function createEmployee(formData: FormData) {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const parsed = employeeCreateSchema.parse({
+    employeeId: formString(formData, "employeeId"),
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
     email: formString(formData, "email"),
@@ -428,6 +429,7 @@ export async function createEmployee(formData: FormData) {
     data: {
       ...employeeData,
       passwordHash,
+      employeeId: parsed.employeeId,
       departmentId: parsed.departmentId || null,
       managerId: parsed.managerId || null,
       secondaryManagerId: parsed.secondaryManagerId || null,
@@ -473,6 +475,7 @@ export async function updateEmployee(formData: FormData) {
     throw new Error("You do not have permission to manage this account.");
   }
   const parsed = employeeSchema.omit({ password: true }).parse({
+    employeeId: formString(formData, "employeeId"),
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
     email: formString(formData, "email"),
@@ -494,6 +497,7 @@ export async function updateEmployee(formData: FormData) {
     where: { id },
     data: {
       ...employeeData,
+      employeeId: parsed.employeeId || null,
       departmentId: parsed.departmentId || null,
       managerId: parsed.managerId || null,
       secondaryManagerId: parsed.secondaryManagerId || null,

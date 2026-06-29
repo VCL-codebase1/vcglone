@@ -5,7 +5,7 @@ export const emailSchema = z.string().email().toLowerCase();
 
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(8)
+  password: z.string().min(6)
 });
 
 export const attendanceActionSchema = z.object({
@@ -88,11 +88,12 @@ export const personalProfileSchema = z.object({
 });
 
 export const employeeSchema = z.object({
+  employeeId: optionalTextSchema(50),
   firstName: z.string().trim().min(2),
   lastName: z.string().trim().min(2),
   email: emailSchema,
   phone: z.string().trim().optional(),
-  password: z.string().min(12).optional(),
+  password: z.string().min(6).optional(),
   role: z.nativeEnum(Role),
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
@@ -103,12 +104,13 @@ export const employeeSchema = z.object({
 }).merge(personalProfileSchema).merge(profileCollectionsSchema);
 
 export const employeeCreateSchema = employeeSchema.extend({
-  password: z.string().min(12, "Use an initial password with at least 12 characters.")
+  employeeId: z.string().trim().min(1, "Employee ID is required.").max(50),
+  password: z.string().min(6, "Use an initial password with at least 6 characters.")
 });
 
 export const passwordResetSchema = z.object({
   userId: z.string().min(1),
-  password: z.string().min(12, "Use a temporary password with at least 12 characters.")
+  password: z.string().min(6, "Use a temporary password with at least 6 characters.")
 });
 
 export const employeeSelfProfileSchema = z.object({

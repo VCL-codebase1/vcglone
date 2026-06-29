@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
+import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { TodayAttendanceDataTable } from "@/components/dashboard-tables";
 import { SystemPulse } from "@/components/system-pulse";
 import { PageHeader, StatCard } from "@/components/ui";
@@ -12,7 +13,8 @@ export const runtime = "nodejs";
 export default async function AdminDashboardPage() {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const today = todayDateOnly();
-  const [selfAttendance, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance] = await Promise.all([
+  const month = new Date().getMonth() + 1;
+  const [selfAttendance, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance, birthdays] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: actor.id, date: today } } }),
     prisma.user.count({ where: { employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.count({ where: { date: today, checkInTime: { not: null } } }),
@@ -20,8 +22,14 @@ export default async function AdminDashboardPage() {
     prisma.attendanceRecord.count({ where: { requiresReview: true } }),
     prisma.leaveRequest.count({ where: { status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } } }),
     prisma.leaveRequest.count({ where: { status: "PENDING" } }),
-    prisma.attendanceRecord.findMany({ where: { date: today }, include: { employee: true }, orderBy: { checkInTime: "desc" }, take: 10 })
+    prisma.attendanceRecord.findMany({ where: { date: today }, include: { employee: true }, orderBy: { checkInTime: "desc" }, take: 10 }),
+    prisma.user.findMany({
+      where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
+      include: { department: true },
+      orderBy: { firstName: "asc" }
+    })
   ]);
+  const birthdayRows = birthdays.filter((person) => person.dateOfBirth && person.dateOfBirth.getUTCMonth() + 1 === month);
   const todayAttendanceRows = todayAttendance.map((record) => ({
     employee: `${record.employee.firstName} ${record.employee.lastName}`,
     checkIn: formatTime(record.checkInTime),
@@ -64,6 +72,7 @@ export default async function AdminDashboardPage() {
           <h2 className="font-semibold text-ink">Today&apos;s attendance</h2>
           <TodayAttendanceDataTable data={todayAttendanceRows} />
         </section>
+        <BirthdaysThisMonthCard birthdays={birthdayRows} />
       </div>
     </div>
   );

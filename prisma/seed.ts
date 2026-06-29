@@ -29,8 +29,8 @@ async function main() {
   if (!email || !email.includes("@")) {
     throw new Error("Set BOOTSTRAP_SUPER_ADMIN_EMAIL to a valid company email before running the bootstrap seed.");
   }
-  if (!password || password.length < 12) {
-    throw new Error("Set BOOTSTRAP_SUPER_ADMIN_PASSWORD to a secure value with at least 12 characters.");
+  if (!password || password.length < 6) {
+    throw new Error("Set BOOTSTRAP_SUPER_ADMIN_PASSWORD to a secure value with at least 6 characters.");
   }
 
   const existingSuperAdmin = await prisma.user.findFirst({

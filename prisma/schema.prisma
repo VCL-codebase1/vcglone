@@ -58,6 +58,7 @@ enum LeaveRequestStatus {
 
 model User {
   id               String             @id @default(cuid())
+  employeeId       String?            @unique
   firstName        String
   lastName         String
   email            String             @unique

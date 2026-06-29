@@ -31,6 +31,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
         <Card className="grid gap-4 md:col-span-2 md:grid-cols-2">
           <div className="md:col-span-2"><h2 className="text-base font-semibold text-ink">Employment and hierarchy</h2></div>
           <input type="hidden" name="id" value={employee.id} />
+          <Field label="Employee ID"><Input name="employeeId" defaultValue={employee.employeeId || ""} /></Field>
           <Field label="First name"><Input name="firstName" defaultValue={employee.firstName} required /></Field>
           <Field label="Last name"><Input name="lastName" defaultValue={employee.lastName} required /></Field>
           <Field label="Email"><Input name="email" type="email" defaultValue={employee.email} required /></Field>
@@ -65,7 +66,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
           </div>
           <form action={resetUserPassword} className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
             <input type="hidden" name="userId" value={employee.id} />
-            <Field label="New temporary password"><Input name="password" type="password" minLength={12} required /></Field>
+            <Field label="New temporary password"><Input name="password" type="password" minLength={6} required /></Field>
             <Button type="submit" variant="secondary">Reset password</Button>
           </form>
         </Card>

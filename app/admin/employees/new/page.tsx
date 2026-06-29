@@ -22,11 +22,12 @@ export default async function NewEmployeePage() {
       <form action={createEmployee} className="grid gap-6 md:grid-cols-2">
         <Card className="grid gap-4 md:col-span-2 md:grid-cols-2">
           <div className="md:col-span-2"><h2 className="text-base font-semibold text-ink">Employment and hierarchy</h2></div>
+          <Field label="Employee ID"><Input name="employeeId" required /></Field>
           <Field label="First name"><Input name="firstName" required /></Field>
           <Field label="Last name"><Input name="lastName" required /></Field>
           <Field label="Email"><Input name="email" type="email" required /></Field>
           <Field label="Phone"><Input name="phone" /></Field>
-          <Field label="Initial password" hint="Use at least 12 characters and share it securely."><Input name="password" type="password" minLength={12} autoComplete="new-password" required /></Field>
+          <Field label="Initial password" hint="Use at least 6 characters and share it securely."><Input name="password" type="password" minLength={6} autoComplete="new-password" required /></Field>
           <Field label="Job title"><Input name="jobTitle" /></Field>
           <Field label="Role"><Select name="role" defaultValue={Role.EMPLOYEE}>{roleOptions.map((role) => <option key={role}>{role}</option>)}</Select></Field>
           <Field label="Employment status"><Select name="employmentStatus" defaultValue={EmploymentStatus.ACTIVE}>{Object.values(EmploymentStatus).map((status) => <option key={status}>{status}</option>)}</Select></Field>

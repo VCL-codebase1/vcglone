@@ -23,6 +23,7 @@ export default async function EmployeeProfilePage() {
   if (!user) return null;
 
   const employmentRows = [
+    ["Employee ID", user.employeeId || "-"],
     ["Role", user.role.replace("_", " ")],
     ["Department", user.department?.name || "-"],
     ["Job title", user.jobTitle || "-"],
