@@ -1,7 +1,7 @@
 import { AttendanceStatus, EmploymentStatus, Gender, LeaveRequestStatus, MaritalStatus, Role } from "@prisma/client";
 import { z } from "zod";
 
-export const emailSchema = z.string().email().toLowerCase();
+export const emailSchema = z.string().trim().email().toLowerCase();
 
 export const loginSchema = z.object({
   email: emailSchema,
