@@ -34,7 +34,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
           <Field label="Employee ID"><Input name="employeeId" defaultValue={employee.employeeId || ""} /></Field>
           <Field label="First name"><Input name="firstName" defaultValue={employee.firstName} required /></Field>
           <Field label="Last name"><Input name="lastName" defaultValue={employee.lastName} required /></Field>
-          <Field label="Email"><Input name="email" type="email" defaultValue={employee.email} required /></Field>
+          <Field label="Email"><Input name="email" type="email" inputMode="email" autoComplete="email" placeholder="employee@company.com" defaultValue={employee.email} required /></Field>
           <Field label="Phone"><Input name="phone" defaultValue={employee.phone || ""} /></Field>
           <Field label="Job title"><Input name="jobTitle" defaultValue={employee.jobTitle || ""} /></Field>
           <Field label="Date joined"><Input name="dateJoined" type="date" defaultValue={employee.dateJoined ? employee.dateJoined.toISOString().slice(0, 10) : ""} /></Field>

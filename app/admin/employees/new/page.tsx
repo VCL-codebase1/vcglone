@@ -25,7 +25,7 @@ export default async function NewEmployeePage() {
           <Field label="Employee ID"><Input name="employeeId" required /></Field>
           <Field label="First name"><Input name="firstName" required /></Field>
           <Field label="Last name"><Input name="lastName" required /></Field>
-          <Field label="Email"><Input name="email" type="email" required /></Field>
+          <Field label="Email"><Input name="email" type="email" inputMode="email" autoComplete="email" placeholder="employee@company.com" required /></Field>
           <Field label="Phone"><Input name="phone" /></Field>
           <Field label="Initial password" hint="Use at least 6 characters and share it securely."><Input name="password" type="password" minLength={6} autoComplete="new-password" required /></Field>
           <Field label="Job title"><Input name="jobTitle" /></Field>

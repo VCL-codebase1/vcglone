@@ -43,6 +43,13 @@ function formJsonArray(formData: FormData, key: string) {
   }
 }
 
+function validationErrorMessage(error: { issues: { path: (string | number)[]; message: string }[] }, fallback: string) {
+  const issue = error.issues[0];
+  if (!issue) return fallback;
+  const field = issue.path.join(".");
+  return field ? `${field}: ${issue.message}` : issue.message;
+}
+
 function profileFormValues(formData: FormData) {
   return {
     dateOfBirth: formString(formData, "dateOfBirth"),
@@ -403,7 +410,7 @@ export async function manuallyAdjustAttendance(formData: FormData) {
 
 export async function createEmployee(formData: FormData) {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
-  const parsed = employeeCreateSchema.parse({
+  const parsed = employeeCreateSchema.safeParse({
     employeeId: formString(formData, "employeeId"),
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
@@ -419,23 +426,25 @@ export async function createEmployee(formData: FormData) {
     dateJoined: formString(formData, "dateJoined"),
     ...profileFormValues(formData)
   });
-  if (!canManageAccountRole(actor.role, parsed.role)) {
+  if (!parsed.success) throw new Error(validationErrorMessage(parsed.error, "Invalid account details."));
+  const values = parsed.data;
+  if (!canManageAccountRole(actor.role, values.role)) {
     throw new Error("You do not have permission to create an account with this role.");
   }
 
-  const passwordHash = await hash(parsed.password, 12);
-  const { password: _password, workExperiences, educationDetails, dependents, ...employeeData } = parsed;
+  const passwordHash = await hash(values.password, 12);
+  const { password: _password, workExperiences, educationDetails, dependents, ...employeeData } = values;
   const employee = await prisma.user.create({
     data: {
       ...employeeData,
       passwordHash,
-      employeeId: parsed.employeeId,
-      departmentId: parsed.departmentId || null,
-      managerId: parsed.managerId || null,
-      secondaryManagerId: parsed.secondaryManagerId || null,
-      dateOfBirth: parsed.dateOfBirth || null,
-      gender: parsed.gender || null,
-      maritalStatus: parsed.maritalStatus || null,
+      employeeId: values.employeeId,
+      departmentId: values.departmentId || null,
+      managerId: values.managerId || null,
+      secondaryManagerId: values.secondaryManagerId || null,
+      dateOfBirth: values.dateOfBirth || null,
+      gender: values.gender || null,
+      maritalStatus: values.maritalStatus || null,
       workExperiences: { create: workExperiences },
       educationDetails: { create: educationDetails },
       dependents: { create: dependents }
@@ -474,7 +483,7 @@ export async function updateEmployee(formData: FormData) {
   if (!canManageAccountRole(actor.role, target.role)) {
     throw new Error("You do not have permission to manage this account.");
   }
-  const parsed = employeeSchema.omit({ password: true }).parse({
+  const parsed = employeeSchema.omit({ password: true }).safeParse({
     employeeId: formString(formData, "employeeId"),
     firstName: formString(formData, "firstName"),
     lastName: formString(formData, "lastName"),
@@ -489,22 +498,24 @@ export async function updateEmployee(formData: FormData) {
     dateJoined: formString(formData, "dateJoined"),
     ...profileFormValues(formData)
   });
-  if (!canManageAccountRole(actor.role, parsed.role)) {
+  if (!parsed.success) throw new Error(validationErrorMessage(parsed.error, "Invalid account details."));
+  const values = parsed.data;
+  if (!canManageAccountRole(actor.role, values.role)) {
     throw new Error("You do not have permission to assign this role.");
   }
-  const { workExperiences, educationDetails, dependents, ...employeeData } = parsed;
+  const { workExperiences, educationDetails, dependents, ...employeeData } = values;
   const updated = await prisma.user.update({
     where: { id },
     data: {
       ...employeeData,
-      employeeId: parsed.employeeId || null,
-      departmentId: parsed.departmentId || null,
-      managerId: parsed.managerId || null,
-      secondaryManagerId: parsed.secondaryManagerId || null,
-      dateJoined: parsed.dateJoined || null,
-      dateOfBirth: parsed.dateOfBirth || null,
-      gender: parsed.gender || null,
-      maritalStatus: parsed.maritalStatus || null,
+      employeeId: values.employeeId || null,
+      departmentId: values.departmentId || null,
+      managerId: values.managerId || null,
+      secondaryManagerId: values.secondaryManagerId || null,
+      dateJoined: values.dateJoined || null,
+      dateOfBirth: values.dateOfBirth || null,
+      gender: values.gender || null,
+      maritalStatus: values.maritalStatus || null,
       workExperiences: { deleteMany: {}, create: workExperiences },
       educationDetails: { deleteMany: {}, create: educationDetails },
       dependents: { deleteMany: {}, create: dependents }
