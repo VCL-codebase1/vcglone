@@ -1,4 +1,4 @@
-import { createDepartment } from "@/lib/actions";
+import { createDepartment, updateDepartment } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { Button, Card, Field, Input, PageHeader, Select, Table, Textarea } from "@/components/ui";
 
@@ -21,9 +21,29 @@ export default async function DepartmentsPage() {
         </form>
       </Card>
       <Table>
-        <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Department</th><th className="px-4 py-3">Manager</th><th className="px-4 py-3">Employees</th><th className="px-4 py-3">Description</th></tr></thead>
+        <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Department</th><th className="px-4 py-3">Manager</th><th className="px-4 py-3">Employees</th><th className="px-4 py-3">Description</th><th className="px-4 py-3">Action</th></tr></thead>
         <tbody className="divide-y divide-line">
-          {departments.map((department) => <tr key={department.id}><td className="px-4 py-3 font-medium">{department.name}</td><td className="px-4 py-3">{department.manager ? `${department.manager.firstName} ${department.manager.lastName}` : "-"}</td><td className="px-4 py-3">{department.employees.length}</td><td className="px-4 py-3 text-muted">{department.description || "-"}</td></tr>)}
+          {departments.map((department) => (
+            <tr key={department.id} className="align-top">
+              <td className="px-4 py-3">
+                <form id={`department-${department.id}`} action={updateDepartment} className="min-w-48">
+                  <input type="hidden" name="id" value={department.id} />
+                  <Input name="name" defaultValue={department.name} required />
+                </form>
+              </td>
+              <td className="px-4 py-3">
+                <Select name="managerId" form={`department-${department.id}`} defaultValue={department.managerId || ""}>
+                  <option value="">None</option>
+                  {managers.map((manager) => <option key={manager.id} value={manager.id}>{manager.firstName} {manager.lastName}</option>)}
+                </Select>
+              </td>
+              <td className="px-4 py-3 font-semibold text-ink">{department.employees.length}</td>
+              <td className="px-4 py-3">
+                <Textarea name="description" form={`department-${department.id}`} defaultValue={department.description || ""} rows={2} />
+              </td>
+              <td className="px-4 py-3"><Button type="submit" form={`department-${department.id}`} variant="secondary">Save</Button></td>
+            </tr>
+          ))}
         </tbody>
       </Table>
     </div>

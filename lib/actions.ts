@@ -81,6 +81,10 @@ function selfServiceProfileHref(role: Role) {
   return "/employee/profile";
 }
 
+async function notifyActionCompleted(userId: string, title: string, message: string, href?: string) {
+  await createNotification({ userId, title, message, href });
+}
+
 export async function submitAttendanceAction(input: unknown): Promise<ActionResult> {
   const user = await requireUser();
   if (user.role === Role.SUPER_ADMIN) return { ok: false, message: "Super Admin accounts do not use attendance check-in." };
@@ -141,6 +145,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
       entityId: record.id,
       metadata: { hasLocation, accuracy }
     });
+    await notifyActionCompleted(user.id, "Check-in completed", requiresReview ? "Your check-in was submitted and marked pending review." : "Your check-in was recorded successfully.", selfServiceProfileHref(user.role));
     revalidatePath("/employee/attendance");
     revalidatePath("/employee/dashboard");
     revalidatePath("/manager/dashboard");
@@ -178,6 +183,7 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
     entityId: record.id,
     metadata: { hasLocation, accuracy, totalMinutes: record.totalMinutes }
   });
+  await notifyActionCompleted(user.id, "Check-out completed", requiresReview ? "Your check-out was submitted and marked pending review." : "Your check-out was recorded successfully.", selfServiceProfileHref(user.role));
   revalidatePath("/employee/attendance");
   revalidatePath("/employee/dashboard");
   revalidatePath("/manager/dashboard");
@@ -276,6 +282,7 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
     entityId: request.id,
     metadata: { totalDays, leaveType: leaveType.name }
   });
+  await notifyActionCompleted(user.id, "Leave request submitted", `${leaveType.name} for ${totalDays} day${totalDays === 1 ? "" : "s"} was submitted for HR approval.`, selfServiceLeaveHref(user.role));
   revalidatePath("/employee/leave");
   return { ok: true, message: "Leave request submitted for approval." };
 }
@@ -320,6 +327,7 @@ export async function decideLeaveRequest(formData: FormData) {
       message: `${request.leaveType.name} for ${request.totalDays} day${request.totalDays === 1 ? "" : "s"} was rejected.${updated.rejectionReason ? ` Reason: ${updated.rejectionReason}` : ""}`,
       href: selfServiceLeaveHref(request.employee.role)
     });
+    await notifyActionCompleted(actor.id, "Leave request rejected", `You rejected ${request.employee.firstName} ${request.employee.lastName}'s ${request.leaveType.name} request.`, "/admin/leave-requests");
   } else {
     await prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
@@ -374,6 +382,7 @@ export async function decideLeaveRequest(formData: FormData) {
       message: `${request.leaveType.name} for ${request.totalDays} day${request.totalDays === 1 ? "" : "s"} was approved.` ,
       href: selfServiceLeaveHref(request.employee.role)
     });
+    await notifyActionCompleted(actor.id, "Leave request approved", `You approved ${request.employee.firstName} ${request.employee.lastName}'s ${request.leaveType.name} request.`, "/admin/leave-requests");
   }
 
   revalidatePath("/manager/leave-approvals");
@@ -404,6 +413,7 @@ export async function manuallyAdjustAttendance(formData: FormData) {
     entityId: updated.id,
     metadata: { status: parsed.status, reason: parsed.reason }
   });
+  await notifyActionCompleted(actor.id, "Attendance adjusted", "The attendance record was manually adjusted successfully.", `/admin/attendance/${updated.id}`);
   revalidatePath("/admin/attendance");
   revalidatePath(`/admin/attendance/${updated.id}`);
 }
@@ -471,6 +481,7 @@ export async function createEmployee(formData: FormData) {
     entityId: employee.id,
     metadata: { email: employee.email, role: employee.role }
   });
+  await notifyActionCompleted(actor.id, "Account created", `${employee.firstName} ${employee.lastName}'s account was created successfully.`, `/admin/employees/${employee.id}`);
   redirect("/admin/employees");
 }
 
@@ -528,6 +539,7 @@ export async function updateEmployee(formData: FormData) {
     entityId: updated.id,
     metadata: { role: updated.role, employmentStatus: updated.employmentStatus }
   });
+  await notifyActionCompleted(actor.id, "Account updated", `${updated.firstName} ${updated.lastName}'s account was updated successfully.`, `/admin/employees/${updated.id}`);
   revalidatePath(`/admin/employees/${id}`);
 }
 
@@ -556,6 +568,7 @@ export async function resetUserPassword(formData: FormData) {
     message: "Your password was reset by a Super Admin. Sign in with the temporary password shared with you and request a change if needed.",
     href: selfServiceProfileHref(target.role)
   });
+  await notifyActionCompleted(actor.id, "Password reset completed", "The user password was reset successfully.", `/admin/employees/${target.id}`);
   revalidatePath(`/admin/employees/${target.id}`);
 }
 
@@ -616,6 +629,7 @@ export async function updateOwnProfile(formData: FormData) {
       dependentCount: dependents.length
     }
   });
+  await notifyActionCompleted(actor.id, "Profile updated", "Your profile was updated successfully.", selfServiceProfileHref(actor.role));
   revalidatePath("/employee/profile");
 }
 
@@ -626,10 +640,29 @@ export async function createDepartment(formData: FormData) {
     description: formString(formData, "description"),
     managerId: formString(formData, "managerId")
   });
-  await prisma.department.create({
+  const department = await prisma.department.create({
     data: { ...parsed, managerId: parsed.managerId || null }
   });
-  await createAuditLog({ actorId: actor.id, action: "DEPARTMENT_CREATED", entityType: "Department", metadata: parsed });
+  await createAuditLog({ actorId: actor.id, action: "DEPARTMENT_CREATED", entityType: "Department", entityId: department.id, metadata: parsed });
+  await notifyActionCompleted(actor.id, "Department created", `${department.name} was created successfully.`, "/admin/departments");
+  revalidatePath("/admin/departments");
+}
+
+export async function updateDepartment(formData: FormData) {
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  const id = formString(formData, "id");
+  if (!id) throw new Error("Missing department id.");
+  const parsed = departmentSchema.parse({
+    name: formString(formData, "name"),
+    description: formString(formData, "description"),
+    managerId: formString(formData, "managerId")
+  });
+  const department = await prisma.department.update({
+    where: { id },
+    data: { ...parsed, managerId: parsed.managerId || null }
+  });
+  await createAuditLog({ actorId: actor.id, action: "DEPARTMENT_UPDATED", entityType: "Department", entityId: department.id, metadata: parsed });
+  await notifyActionCompleted(actor.id, "Department updated", `${department.name} was updated successfully.`, "/admin/departments");
   revalidatePath("/admin/departments");
 }
 
@@ -653,6 +686,7 @@ export async function createLeaveType(formData: FormData) {
     entityId: type.id,
     metadata: { name: type.name }
   });
+  await notifyActionCompleted(actor.id, "Leave type created", `${type.name} was created successfully.`, "/admin/leave-types");
   revalidatePath("/admin/leave-types");
 }
 
@@ -676,5 +710,6 @@ export async function updateWorkPolicy(formData: FormData) {
     entityId: policy.id,
     metadata: parsed
   });
+  await notifyActionCompleted(actor.id, "Work policy updated", "The work policy was saved successfully.", "/admin/settings");
   revalidatePath("/admin/settings");
 }
