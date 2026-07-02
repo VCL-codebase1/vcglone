@@ -1,12 +1,11 @@
-import { CalendarCheck, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, Users } from "lucide-react";
+import { Bell, CalendarCheck, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, Users } from "lucide-react";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
-import { NotificationCenter } from "@/components/notification-center";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { authOptions } from "@/lib/auth";
-import { getRecentNotifications, getUnreadNotificationCount } from "@/lib/notifications";
+import { getUnreadNotificationCount } from "@/lib/notifications";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -23,6 +22,12 @@ type NavItem = {
   icon: keyof typeof iconMap;
 };
 
+function notificationsHref(role?: string | null) {
+  if (role === "HR_ADMIN" || role === "SUPER_ADMIN") return "/admin/notifications";
+  if (role === "MANAGER") return "/manager/notifications";
+  return "/employee/notifications";
+}
+
 export async function DashboardShell({
   children,
   nav,
@@ -34,10 +39,8 @@ export async function DashboardShell({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const [notifications, unreadCount] = await Promise.all([
-    getRecentNotifications(session.user.id),
-    getUnreadNotificationCount(session.user.id)
-  ]);
+  const unreadCount = await getUnreadNotificationCount(session.user.id);
+  const notificationUrl = notificationsHref(session.user.role);
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
@@ -61,12 +64,17 @@ export async function DashboardShell({
             );
           })}
         </nav>
-        <div className="mb-3 shrink-0">
-          <NotificationCenter notifications={notifications} unreadCount={unreadCount} />
-        </div>
         <div className="mt-4 shrink-0 rounded-2xl border border-white/70 bg-gradient-to-br from-brandSoft to-white p-4 text-sm shadow-[0_12px_32px_rgba(23,32,51,0.06)] ring-1 ring-line/70">
-          <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
-          <p className="text-xs text-muted">{session.user.role.replace("_", " ")}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
+              <p className="text-xs text-muted">{session.user.role.replace("_", " ")}</p>
+            </div>
+            <Link href={notificationUrl} className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft" aria-label="Open notifications">
+              <Bell className="h-4 w-4" aria-hidden />
+              {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
+            </Link>
+          </div>
           <Link href="/api/auth/signout" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-line transition hover:bg-amber-50">
             <LogOut className="h-3.5 w-3.5" aria-hidden />
             Sign out
@@ -82,6 +90,10 @@ export async function DashboardShell({
             <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <Link href={notificationUrl} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" aria-label="Open notifications">
+              <Bell className="h-4 w-4" aria-hidden />
+              {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
+            </Link>
             <Drawer>
               <DrawerTrigger asChild>
                 <Button type="button" variant="secondary" className="h-10 w-10 px-0 max-[420px]:w-10" aria-label="Open account panel">
@@ -90,7 +102,6 @@ export async function DashboardShell({
               </DrawerTrigger>
               <DrawerContent title="Account">
                 <div className="space-y-4">
-                  <NotificationCenter notifications={notifications} unreadCount={unreadCount} />
                   <div className="rounded-2xl border border-line bg-gradient-to-br from-brandSoft to-white p-4 shadow-[0_10px_28px_rgba(23,32,51,0.05)]">
                     <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
                     <p className="text-sm text-muted">{session.user.role.replace("_", " ")}</p>
