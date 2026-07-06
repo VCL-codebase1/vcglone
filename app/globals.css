@@ -38,6 +38,20 @@ textarea {
   font: inherit;
 }
 
+input[type="date"] {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-block-size: 1.5em;
+  text-align: left;
+}
+
 @layer components {
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-brand/80 focus:ring-offset-2 focus:ring-offset-white;

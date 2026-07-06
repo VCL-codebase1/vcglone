@@ -27,7 +27,7 @@ export default async function ReportsPage() {
         </section>
         <section className="rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5">
           <h2 className="font-semibold text-ink">Leave report</h2>
-          <p className="mt-1 text-sm text-muted">Export leave request status, dates, approvers, and attachment references.</p>
+          <p className="mt-1 text-sm text-muted">Export leave request status, dates, approvers, and comments.</p>
           <LinkButton href="/api/reports/leave" className="mt-4" variant="secondary">Export leave CSV</LinkButton>
         </section>
         <section className="rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5">

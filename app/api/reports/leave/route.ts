@@ -27,7 +27,6 @@ export async function GET(request: Request) {
     endDate: formatDate(request.endDate),
     totalDays: request.totalDays,
     reason: request.reason,
-    attachmentUrl: request.attachmentUrl,
     status: request.status,
     managerApprover: request.managerApprover ? `${request.managerApprover.firstName} ${request.managerApprover.lastName}` : "",
     hrApprover: request.hrApprover ? `${request.hrApprover.firstName} ${request.hrApprover.lastName}` : "",

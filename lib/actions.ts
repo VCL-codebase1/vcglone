@@ -22,7 +22,6 @@ import {
   passwordResetSchema,
   workPolicySchema
 } from "@/lib/validators";
-import { getUploadConfig, uploadLeaveAttachment } from "@/lib/storage";
 
 type ActionResult = { ok: true; message: string } | { ok: false; message: string };
 
@@ -228,18 +227,6 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   });
   if (overlap) return { ok: false, message: "This request overlaps an existing pending or approved leave." };
 
-  let attachmentUrl: string | undefined;
-  const file = formData.get("attachment");
-  const uploadConfig = getUploadConfig();
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadLeaveAttachment(file, user.id);
-    if (!upload.ok) return { ok: false, message: upload.message };
-    attachmentUrl = upload.url;
-  }
-  if (leaveType.requiresDocument && uploadConfig.enabled && !attachmentUrl) {
-    return { ok: false, message: "This leave type requires a supporting document." };
-  }
-
   if (leaveType.isPaid) {
     const balance = await prisma.leaveBalance.upsert({
       where: {
@@ -271,8 +258,7 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       totalDays,
-      reason: parsed.data.reason,
-      attachmentUrl
+      reason: parsed.data.reason
     }
   });
   await createAuditLog({
@@ -673,7 +659,6 @@ export async function createLeaveType(formData: FormData) {
     description: formString(formData, "description"),
     annualEntitlementDays: formString(formData, "annualEntitlementDays"),
     eligibilityMonths: formString(formData, "eligibilityMonths"),
-    requiresDocument: formData.has("requiresDocument"),
     requiresApproval: !formData.has("requiresApproval") ? true : formData.has("requiresApproval"),
     isPaid: formData.has("isPaid"),
     active: formData.has("active")

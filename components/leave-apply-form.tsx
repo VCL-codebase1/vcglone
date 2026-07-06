@@ -12,14 +12,13 @@ import { leaveRequestSchema } from "@/lib/validators";
 type LeaveTypeOption = {
   id: string;
   name: string;
-  requiresDocument: boolean;
   annualEntitlementDays: number;
   eligibilityMonths: number;
 };
 
 type LeaveRequestValues = z.infer<typeof leaveRequestSchema>;
 
-export function LeaveApplyForm({ leaveTypes, uploadEnabled }: { leaveTypes: LeaveTypeOption[]; uploadEnabled: boolean }) {
+export function LeaveApplyForm({ leaveTypes }: { leaveTypes: LeaveTypeOption[] }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [leaveTypeId, setLeaveTypeId] = useState(leaveTypes[0]?.id || "");
@@ -60,8 +59,8 @@ export function LeaveApplyForm({ leaveTypes, uploadEnabled }: { leaveTypes: Leav
   }
 
   return (
-    <Card>
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
+    <Card className="overflow-hidden">
+      <form onSubmit={handleSubmit(onSubmit)} className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
         <Field label="Leave type">
           <Select
             value={leaveTypeId}
@@ -89,23 +88,16 @@ export function LeaveApplyForm({ leaveTypes, uploadEnabled }: { leaveTypes: Leav
           <Input type="date" required {...register("endDate", { valueAsDate: true })} />
           {errors.endDate ? <span className="block text-xs font-normal text-danger">{errors.endDate.message}</span> : null}
         </Field>
-        <div className="md:col-span-2">
+        <div className="min-w-0 md:col-span-2">
           <Field label="Reason">
             <Textarea rows={5} minLength={10} required {...register("reason")} />
             {errors.reason ? <span className="block text-xs font-normal text-danger">{errors.reason.message}</span> : null}
           </Field>
         </div>
-        {selectedType?.requiresDocument ? (
-          <div className="md:col-span-2">
-            <Field label="Supporting document" hint={uploadEnabled ? "PDF, JPG, JPEG, or PNG only." : "Upload storage is not configured, so attachments are disabled."}>
-              <Input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png" disabled={!uploadEnabled} />
-            </Field>
-          </div>
-        ) : null}
         {error ? <p className="md:col-span-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-danger">{error}</p> : null}
         {message ? <p className="md:col-span-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</p> : null}
-        <div className="md:col-span-2">
-          <Button type="submit" disabled={pending}>{pending ? "Submitting..." : "Submit leave request"}</Button>
+        <div className="min-w-0 md:col-span-2">
+          <Button type="submit" className="w-full" disabled={pending}>{pending ? "Submitting..." : "Submit leave request"}</Button>
         </div>
       </form>
     </Card>

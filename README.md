@@ -2,7 +2,7 @@
 
 vcglOne is a production-conscious internal workforce operations platform for attendance visibility, location-aware daily check-in/check-out, leave governance, employee records, admin approvals, reporting, and audit logs.
 
-The app is built for Vercel from day one with Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma ORM, credentials authentication, bcrypt password hashing, server-side RBAC, CSV exports, and a cloud-storage abstraction for leave documents.
+The app is built for Vercel from day one with Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma ORM, credentials authentication, bcrypt password hashing, server-side RBAC, and CSV exports.
 
 ## Features
 
@@ -14,7 +14,6 @@ The app is built for Vercel from day one with Next.js App Router, TypeScript, Ta
 - Admin attendance review with GPS coordinates, accuracy, timestamps, user agent, notes, manual adjustment, and audit logs.
 - Leave types, leave balances by employee/year, leave requests, manager/admin approvals, rejection comments, and balance deduction on approval.
 - Employee, department, work policy, report, CSV export, and audit log pages.
-- Upload abstraction for Supabase Storage, Cloudinary, and S3-compatible storage. If no provider is configured, attachment upload is disabled gracefully.
 
 ## Tech Stack
 
@@ -83,15 +82,13 @@ Required:
 - `AUTH_SECRET` optional alias; set it to the same value as `NEXTAUTH_SECRET` if your host expects Auth.js naming
 - `NEXTAUTH_URL`
 - `APP_URL`
-- `UPLOAD_PROVIDER`
-- `MAX_FILE_UPLOAD_MB`
 - `NODE_ENV`
 - `SENTRY_DSN` optional
 - `NEXT_PUBLIC_SENTRY_DSN` optional
 - `SENTRY_ORG` optional
 - `SENTRY_PROJECT` optional
 
-Optional provider secrets are documented in `.env.example`. Do not commit real credentials.
+Do not commit real credentials.
 
 ## Database Setup
 
@@ -121,13 +118,12 @@ Avoid destructive resets in production. `npm run db:reset` is for local developm
 2. Add `DATABASE_URL` and `DIRECT_URL` to Vercel project environment variables.
 3. Add a strong `NEXTAUTH_SECRET`. In Vercel, also add `AUTH_SECRET` with the same value if you want compatibility with newer Auth.js naming.
 4. Set `NEXTAUTH_URL` and `APP_URL` to your production Vercel URL.
-5. Set `UPLOAD_PROVIDER=none` unless you have wired a supported cloud provider.
-6. Deploy to Vercel.
-7. Ensure the Vercel build runs `npm run build`, which generates Prisma Client before `next build`.
-8. Run `npm run prisma:deploy` against production before or during release.
-9. Confirm login, attendance, leave approval, admin dashboard, CSV export, and audit logs.
+5. Deploy to Vercel.
+6. Ensure the Vercel build runs `npm run build`, which generates Prisma Client before `next build`.
+7. Run `npm run prisma:deploy` against production before or during release.
+8. Confirm login, attendance, leave approval, admin dashboard, CSV export, and audit logs.
 
-All database routes and actions use Node.js runtime. Uploaded files are not written permanently to the Vercel filesystem.
+All database routes and actions use Node.js runtime.
 
 ## Neon Setup
 
@@ -141,26 +137,12 @@ All database routes and actions use Node.js runtime. Uploaded files are not writ
 - Create a Supabase project.
 - Use the pooler connection string for `DATABASE_URL` when appropriate.
 - Use the direct database connection string for `DIRECT_URL` where appropriate.
-- If you later enable Supabase Storage, wire the service role key only on the server.
 
 ## Aiven Setup
 
 - Create an Aiven PostgreSQL service.
 - Use the standard PostgreSQL connection string for `DATABASE_URL`.
 - `DIRECT_URL` can be the same connection string unless your network topology requires a different migration URL.
-
-## Upload Storage
-
-`UPLOAD_PROVIDER` controls attachment behavior:
-
-- `none`: upload fields are disabled gracefully.
-- `supabase`: intended for Supabase Storage.
-- `cloudinary`: intended for Cloudinary signed uploads.
-- `s3`: intended for S3-compatible storage.
-
-The abstraction lives in `lib/storage.ts`. Production provider credentials must stay server-side and must not be exposed to the client.
-
-Allowed file types: PDF, JPG, JPEG, PNG. File size is controlled by `MAX_FILE_UPLOAD_MB`.
 
 ## Account Bootstrap
 
@@ -183,7 +165,6 @@ After bootstrap, the Super Admin creates HR Admin, Manager, and Employee account
 - Create the first Super Admin.
 - Configure leave types.
 - Configure work policy.
-- Configure upload provider if document upload is required.
 - Test check-in/check-out on mobile.
 - Test location permission granted.
 - Test location permission denied.

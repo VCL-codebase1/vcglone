@@ -130,7 +130,6 @@ export const leaveTypeSchema = z.object({
   description: z.string().trim().optional(),
   annualEntitlementDays: z.coerce.number().int().min(0).max(365),
   eligibilityMonths: z.coerce.number().int().min(1).max(12),
-  requiresDocument: z.coerce.boolean().optional(),
   requiresApproval: z.coerce.boolean().optional(),
   isPaid: z.coerce.boolean().optional(),
   active: z.coerce.boolean().optional()
