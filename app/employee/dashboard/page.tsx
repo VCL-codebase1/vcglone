@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { CalendarDays, ClipboardCheck } from "lucide-react";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
+import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { LiveClock } from "@/components/live-clock";
 import { Card, EmptyState, PageHeader, StatCard, StatusBadge, Table } from "@/components/ui";
 import { compactDuration, formatDate, formatDateTime, formatTime, todayDateOnly } from "@/lib/dates";
@@ -12,7 +13,8 @@ export const runtime = "nodejs";
 export default async function EmployeeDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
-  const [record, leaveToday, recentAttendance, balances, leaveRequests] = await Promise.all([
+  const month = new Date().getMonth() + 1;
+  const [record, leaveToday, recentAttendance, balances, leaveRequests, birthdays] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
     prisma.leaveRequest.findFirst({
       where: { employeeId: user.id, status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } },
@@ -20,8 +22,14 @@ export default async function EmployeeDashboardPage() {
     }),
     prisma.attendanceRecord.findMany({ where: { employeeId: user.id }, orderBy: { date: "desc" }, take: 5 }),
     prisma.leaveBalance.findMany({ where: { employeeId: user.id, year: new Date().getFullYear() }, include: { leaveType: true }, take: 4 }),
-    prisma.leaveRequest.findMany({ where: { employeeId: user.id }, include: { leaveType: true }, orderBy: { createdAt: "desc" }, take: 5 })
+    prisma.leaveRequest.findMany({ where: { employeeId: user.id }, include: { leaveType: true }, orderBy: { createdAt: "desc" }, take: 5 }),
+    prisma.user.findMany({
+      where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
+      include: { department: true },
+      orderBy: { firstName: "asc" }
+    })
   ]);
+  const birthdayRows = birthdays.filter((person) => person.dateOfBirth && person.dateOfBirth.getUTCMonth() + 1 === month);
 
   const status = leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN";
   const nextAction = record?.checkInTime && !record.checkOutTime ? "check-out" : record?.checkInTime && record.checkOutTime ? "done" : "check-in";
@@ -82,6 +90,7 @@ export default async function EmployeeDashboardPage() {
           </div>
         </Card>
       </div>
+      <BirthdaysThisMonthCard birthdays={birthdayRows} />
       <Card>
         <h2 className="mb-4 font-semibold text-ink">Recent leave requests</h2>
         {leaveRequests.length ? (

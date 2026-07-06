@@ -1,6 +1,6 @@
 import { Cake, Gift } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui";
-import { formatDate } from "@/lib/dates";
+import { formatMonthDay } from "@/lib/dates";
 
 type BirthdayPerson = {
   id: string;
@@ -12,8 +12,8 @@ type BirthdayPerson = {
 
 export function BirthdaysThisMonthCard({ birthdays }: { birthdays: BirthdayPerson[] }) {
   const sorted = [...birthdays].sort((a, b) => {
-    const first = a.dateOfBirth?.getDate() ?? 0;
-    const second = b.dateOfBirth?.getDate() ?? 0;
+    const first = a.dateOfBirth?.getUTCDate() ?? 0;
+    const second = b.dateOfBirth?.getUTCDate() ?? 0;
     return first - second;
   });
 
@@ -42,7 +42,7 @@ export function BirthdaysThisMonthCard({ birthdays }: { birthdays: BirthdayPerso
                 <p className="truncate text-sm font-semibold text-ink">{person.firstName} {person.lastName}</p>
                 <p className="truncate text-xs text-muted">{person.department?.name || "No department"}</p>
               </div>
-              <p className="shrink-0 text-xs font-semibold text-brand">{formatDate(person.dateOfBirth)}</p>
+              <p className="shrink-0 text-xs font-semibold text-brand">{formatMonthDay(person.dateOfBirth)}</p>
             </div>
           ))}
           {sorted.length > 8 ? <p className="text-xs text-muted">+{sorted.length - 8} more birthday{sorted.length - 8 === 1 ? "" : "s"} this month</p> : null}

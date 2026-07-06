@@ -32,6 +32,15 @@ export function formatDate(date: Date | string | null | undefined) {
   }).format(new Date(date));
 }
 
+export function formatMonthDay(date: Date | string | null | undefined) {
+  if (!date) return "-";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric"
+  }).format(new Date(date));
+}
+
 export function formatDateTime(date: Date | string | null | undefined) {
   if (!date) return "-";
   return new Intl.DateTimeFormat("en-US", {

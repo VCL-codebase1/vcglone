@@ -80,6 +80,16 @@ function selfServiceProfileHref(role: Role) {
   return "/employee/profile";
 }
 
+function selfServiceDashboardHref(role: Role) {
+  if (role === Role.HR_ADMIN) return "/admin/dashboard";
+  if (role === Role.MANAGER) return "/manager/dashboard";
+  return "/employee/dashboard";
+}
+
+function tracksLeaveBalance(leaveType: { annualEntitlementDays: number }) {
+  return leaveType.annualEntitlementDays > 0;
+}
+
 async function notifyActionCompleted(userId: string, title: string, message: string, href?: string) {
   await createNotification({ userId, title, message, href });
 }
@@ -227,7 +237,7 @@ export async function applyForLeave(formData: FormData): Promise<ActionResult> {
   });
   if (overlap) return { ok: false, message: "This request overlaps an existing pending or approved leave." };
 
-  if (leaveType.isPaid) {
+  if (tracksLeaveBalance(leaveType)) {
     const balance = await prisma.leaveBalance.upsert({
       where: {
         employeeId_leaveTypeId_year: {
@@ -326,17 +336,26 @@ export async function decideLeaveRequest(formData: FormData) {
           approvedAt: new Date()
         }
       });
-      if (request.leaveType.isPaid) {
-        const balance = await tx.leaveBalance.findUnique({
+      if (tracksLeaveBalance(request.leaveType)) {
+        const balance = await tx.leaveBalance.upsert({
           where: {
             employeeId_leaveTypeId_year: {
               employeeId: request.employeeId,
               leaveTypeId: request.leaveTypeId,
               year: request.startDate.getFullYear()
             }
-          }
+          },
+          create: {
+            employeeId: request.employeeId,
+            leaveTypeId: request.leaveTypeId,
+            year: request.startDate.getFullYear(),
+            entitlementDays: request.leaveType.annualEntitlementDays,
+            usedDays: 0,
+            remainingDays: request.leaveType.annualEntitlementDays
+          },
+          update: {}
         });
-        if (!balance || balance.remainingDays < request.totalDays) throw new Error("Insufficient leave balance for approval.");
+        if (balance.remainingDays < request.totalDays) throw new Error("Insufficient leave balance for approval.");
 
         await tx.leaveBalance.update({
           where: {
@@ -373,6 +392,9 @@ export async function decideLeaveRequest(formData: FormData) {
 
   revalidatePath("/manager/leave-approvals");
   revalidatePath("/admin/leave-requests");
+  revalidatePath(selfServiceLeaveHref(request.employee.role));
+  revalidatePath(selfServiceDashboardHref(request.employee.role));
+  revalidatePath(`/admin/employees/${request.employeeId}`);
 }
 
 export async function manuallyAdjustAttendance(formData: FormData) {

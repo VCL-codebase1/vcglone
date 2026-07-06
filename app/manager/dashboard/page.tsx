@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
+import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { PageHeader, StatCard, StatusBadge, Table } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,8 @@ export const runtime = "nodejs";
 export default async function ManagerDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
-  const [selfAttendance, teamCount, teamAttendance, pendingLeave] = await Promise.all([
+  const month = new Date().getMonth() + 1;
+  const [selfAttendance, teamCount, teamAttendance, pendingLeave, birthdays] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
     prisma.user.count({ where: { managerId: user.id, employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.findMany({
@@ -18,8 +20,14 @@ export default async function ManagerDashboardPage() {
       include: { employee: true },
       orderBy: { checkInTime: "desc" }
     }),
-    prisma.leaveRequest.count({ where: { status: "PENDING", employee: { managerId: user.id } } })
+    prisma.leaveRequest.count({ where: { status: "PENDING", employee: { managerId: user.id } } }),
+    prisma.user.findMany({
+      where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
+      include: { department: true },
+      orderBy: { firstName: "asc" }
+    })
   ]);
+  const birthdayRows = birthdays.filter((person) => person.dateOfBirth && person.dateOfBirth.getUTCMonth() + 1 === month);
   const nextAction = selfAttendance?.checkInTime && !selfAttendance.checkOutTime ? "check-out" : selfAttendance?.checkInTime && selfAttendance.checkOutTime ? "done" : "check-in";
   const location = selfAttendance?.checkOutPlaceName
     || selfAttendance?.checkInPlaceName
@@ -46,6 +54,7 @@ export default async function ManagerDashboardPage() {
         <StatCard label="Checked in today" value={teamAttendance.filter((row) => row.checkInTime).length} />
         <StatCard label="Pending approvals" value={pendingLeave} />
       </div>
+      <BirthdaysThisMonthCard birthdays={birthdayRows} />
       <Table>
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">Check in</th><th className="px-4 py-3">Check out</th><th className="px-4 py-3">Status</th></tr></thead>
         <tbody className="divide-y divide-line">
