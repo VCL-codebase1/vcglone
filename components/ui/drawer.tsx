@@ -14,7 +14,7 @@ export function DrawerContent({ children, className, title }: { children: ReactN
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border border-line bg-white p-4 shadow-[0_-18px_60px_rgba(23,32,51,0.14)] outline-none",
+          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border border-line bg-white p-4 shadow-[0_-18px_60px_rgba(23,32,51,0.14)] outline-none dark:bg-panel dark:shadow-none",
           className
         )}
       >

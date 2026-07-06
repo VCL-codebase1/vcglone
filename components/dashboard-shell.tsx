@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { authOptions } from "@/lib/auth";
 import { getUnreadNotificationCount } from "@/lib/notifications";
@@ -44,7 +45,7 @@ export async function DashboardShell({
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/70 bg-white/85 px-4 py-5 shadow-[10px_0_40px_rgba(23,32,51,0.04)] backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/70 bg-white/85 px-4 py-5 shadow-[10px_0_40px_rgba(23,32,51,0.04)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none lg:flex">
         <div className="shrink-0">
           <Link href="/" className="block rounded-2xl px-2 py-2 transition hover:bg-surface/70">
             <BrandLogo imageClassName="max-h-16 w-auto max-w-[13rem]" priority />
@@ -55,8 +56,8 @@ export async function DashboardShell({
           {nav.map((item) => {
             const Icon = iconMap[item.icon];
             return (
-              <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-brandSoft hover:text-brand">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-muted transition group-hover:bg-white group-hover:text-brand">
+              <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-brandSoft hover:text-brand dark:text-muted dark:hover:text-blue-200">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-muted transition group-hover:bg-white group-hover:text-brand dark:group-hover:bg-panel dark:group-hover:text-blue-200">
                   <Icon className="h-4 w-4" aria-hidden />
                 </span>
                 {item.label}
@@ -64,24 +65,27 @@ export async function DashboardShell({
             );
           })}
         </nav>
-        <div className="mt-4 shrink-0 rounded-2xl border border-white/70 bg-gradient-to-br from-brandSoft to-white p-4 text-sm shadow-[0_12px_32px_rgba(23,32,51,0.06)] ring-1 ring-line/70">
+        <div className="mt-4 shrink-0 rounded-2xl border border-white/70 bg-gradient-to-br from-brandSoft to-white p-4 text-sm shadow-[0_12px_32px_rgba(23,32,51,0.06)] ring-1 ring-line/70 dark:border-line dark:shadow-none">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
               <p className="text-xs text-muted">{session.user.role.replace("_", " ")}</p>
             </div>
-            <Link href={notificationUrl} className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft" aria-label="Open notifications">
-              <Bell className="h-4 w-4" aria-hidden />
-              {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
-            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              <ThemeToggle />
+              <Link href={notificationUrl} className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" aria-label="Open notifications">
+                <Bell className="h-4 w-4" aria-hidden />
+                {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
+              </Link>
+            </div>
           </div>
-          <Link href="/api/auth/signout" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-line transition hover:bg-amber-50">
+          <Link href="/api/auth/signout" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-line transition hover:bg-amber-50 dark:bg-panel dark:text-amber-200 dark:hover:bg-amber-950/40">
             <LogOut className="h-3.5 w-3.5" aria-hidden />
             Sign out
           </Link>
         </div>
       </aside>
-      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/90 px-3 py-3 shadow-[0_8px_28px_rgba(23,32,51,0.05)] backdrop-blur-xl sm:px-4 lg:hidden">
+      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/90 px-3 py-3 shadow-[0_8px_28px_rgba(23,32,51,0.05)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none sm:px-4 lg:hidden">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <Link href="/" className="block">
@@ -90,6 +94,7 @@ export async function DashboardShell({
             <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
             <Link href={notificationUrl} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" aria-label="Open notifications">
               <Bell className="h-4 w-4" aria-hidden />
               {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
