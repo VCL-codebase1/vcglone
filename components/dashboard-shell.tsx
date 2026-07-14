@@ -6,7 +6,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { authOptions } from "@/lib/auth";
-import { getUnreadNotificationCount } from "@/lib/notifications";
+import { ensureBirthdayNotificationsForUser, getUnreadNotificationCount } from "@/lib/notifications";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -40,6 +40,11 @@ export async function DashboardShell({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+  await ensureBirthdayNotificationsForUser({
+    id: session.user.id,
+    role: session.user.role,
+    firstName: session.user.firstName
+  });
   const unreadCount = await getUnreadNotificationCount(session.user.id);
   const notificationUrl = notificationsHref(session.user.role);
 
