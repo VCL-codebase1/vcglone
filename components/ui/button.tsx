@@ -3,7 +3,7 @@
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import Link from "next/link";
-import type { ComponentProps } from "react";
+import { forwardRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -23,15 +23,15 @@ const buttonVariants = cva(
   }
 );
 
-export function Button({
+export const Button = forwardRef<HTMLButtonElement, ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }>(function Button({
   className,
   variant,
   asChild = false,
   ...props
-}: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+}, ref) {
   const Comp = asChild ? Slot : "button";
-  return <Comp className={cn(buttonVariants({ variant }), className)} {...props} />;
-}
+  return <Comp ref={ref} className={cn(buttonVariants({ variant }), className)} {...props} />;
+});
 
 export function LinkButton({
   className,
