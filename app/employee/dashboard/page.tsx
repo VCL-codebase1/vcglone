@@ -1,10 +1,10 @@
 import { format } from "date-fns";
-import { CalendarDays, ClipboardCheck } from "lucide-react";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
+import { EmployeeDashboardActivity } from "@/components/employee-dashboard-activity";
 import { LiveClock } from "@/components/live-clock";
-import { Card, EmptyState, PageHeader, StatCard, StatusBadge, Table } from "@/components/ui";
-import { compactDuration, formatDate, formatDateTime, formatTime, todayDateOnly } from "@/lib/dates";
+import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/rbac";
 
@@ -40,70 +40,59 @@ export default async function EmployeeDashboardPage() {
       : record?.checkInLatitude
         ? `${record.checkInLatitude}, ${record.checkInLongitude}`
         : undefined);
+  const attendanceActivity = recentAttendance.map((row) => ({
+    id: row.id,
+    date: formatDate(row.date),
+    checkIn: formatTime(row.checkInTime),
+    checkOut: formatTime(row.checkOutTime),
+    status: row.status
+  }));
+  const leaveActivity = leaveRequests.map((request) => ({
+    id: request.id,
+    type: request.leaveType.name,
+    dates: `${formatDate(request.startDate)} - ${formatDate(request.endDate)}`,
+    days: request.totalDays,
+    status: request.status
+  }));
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={`Good day, ${user.firstName}`} description={`${format(new Date(), "EEEE, MMMM d, yyyy")} ?? `} action={<div className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft"><LiveClock /></div>} />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Today" value={<StatusBadge value={status} />} detail="Attendance status" />
-        <StatCard label="Check in" value={formatTime(record?.checkInTime)} />
-        <StatCard label="Check out" value={formatTime(record?.checkOutTime)} />
-        <StatCard label="Duration" value={compactDuration(record?.totalMinutes)} />
-      </div>
+    <div className="space-y-5">
+      <PageHeader title={`Good day, ${user.firstName}`} description={format(new Date(), "EEEE, MMMM d, yyyy")} action={<div className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft dark:bg-panel"><LiveClock /></div>} />
       <AttendanceActionCard
+        compact
+        status={status}
         nextAction={nextAction}
         lastLocation={location}
         checkedInAt={record?.checkInTime?.toISOString()}
         checkedOutAt={record?.checkOutTime?.toISOString()}
         totalMinutes={record?.totalMinutes}
       />
-      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
-        <Card>
-          <div className="mb-4 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-brand" aria-hidden />
-            <h2 className="font-semibold text-ink">Recent attendance</h2>
-          </div>
-          {recentAttendance.length ? (
-            <Table>
-              <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">In</th><th className="px-4 py-3">Out</th><th className="px-4 py-3">Status</th></tr></thead>
-              <tbody className="divide-y divide-line">
-                {recentAttendance.map((row) => (
-                  <tr key={row.id}><td className="px-4 py-3">{formatDate(row.date)}</td><td className="px-4 py-3">{formatTime(row.checkInTime)}</td><td className="px-4 py-3">{formatTime(row.checkOutTime)}</td><td className="px-4 py-3"><StatusBadge value={row.status} /></td></tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : <EmptyState title="No attendance yet" description="Your attendance records will appear after your first check-in." />}
-        </Card>
-        <Card>
-          <div className="mb-4 flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-brand" aria-hidden />
-            <h2 className="font-semibold text-ink">Leave balances</h2>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {balances.map((balance) => (
-              <div key={balance.id} className="rounded-md border border-line p-3">
-                <p className="text-sm font-semibold text-ink">{balance.leaveType.name}</p>
-                <p className="mt-1 text-2xl font-semibold text-brand">{balance.remainingDays}</p>
-                <p className="text-xs text-muted">remaining of {balance.entitlementDays} days</p>
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <EmployeeDashboardActivity attendance={attendanceActivity} leave={leaveActivity} />
+        <div className="space-y-5">
+          <Card className="space-y-3">
+            <div>
+              <h2 className="font-semibold text-ink">Leave balances</h2>
+              <p className="mt-0.5 text-sm text-muted">Available days this year.</p>
+            </div>
+            {balances.length ? (
+              <div className="divide-y divide-line">
+                {balances.map((balance) => {
+                  const percentage = balance.entitlementDays > 0 ? Math.max(0, Math.min(100, (balance.remainingDays / balance.entitlementDays) * 100)) : 0;
+                  return (
+                    <div key={balance.id} className="py-3 first:pt-1 last:pb-0">
+                      <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-ink">{balance.leaveType.name}</p><p className="text-sm font-semibold text-brand">{balance.remainingDays} days</p></div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface"><div className="h-full rounded-full bg-brand" style={{ width: `${percentage}%` }} /></div>
+                      <p className="mt-1 text-xs text-muted">{balance.remainingDays} of {balance.entitlementDays} remaining</p>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </Card>
+            ) : <EmptyState title="No leave balances" description="Your available leave will appear here." />}
+          </Card>
+          <BirthdaysThisMonthCard birthdays={birthdayRows} limit={3} />
+        </div>
       </div>
-      <BirthdaysThisMonthCard birthdays={birthdayRows} />
-      <Card>
-        <h2 className="mb-4 font-semibold text-ink">Recent leave requests</h2>
-        {leaveRequests.length ? (
-          <Table>
-            <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Type</th><th className="px-4 py-3">Dates</th><th className="px-4 py-3">Days</th><th className="px-4 py-3">Status</th></tr></thead>
-            <tbody className="divide-y divide-line">
-              {leaveRequests.map((request) => (
-                <tr key={request.id}><td className="px-4 py-3">{request.leaveType.name}</td><td className="px-4 py-3">{formatDate(request.startDate)} - {formatDate(request.endDate)}</td><td className="px-4 py-3">{request.totalDays}</td><td className="px-4 py-3"><StatusBadge value={request.status} /></td></tr>
-              ))}
-            </tbody>
-          </Table>
-        ) : <EmptyState title="No leave requests" description="Your leave applications will appear here." />}
-      </Card>
     </div>
   );
 }

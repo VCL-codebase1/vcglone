@@ -4,7 +4,7 @@ import { Clock, LocateFixed, MapPinOff } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "@/lib/toast";
 import { submitAttendanceAction } from "@/lib/actions";
-import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, Textarea } from "@/components/ui";
+import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, StatusBadge, Textarea } from "@/components/ui";
 
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
@@ -12,6 +12,8 @@ type Props = {
   checkedInAt?: string;
   checkedOutAt?: string;
   totalMinutes?: number | null;
+  status?: string;
+  compact?: boolean;
 };
 
 async function resolvePlaceName(coords: GeolocationCoordinates) {
@@ -72,7 +74,12 @@ function formatElapsedTime(totalSeconds: number) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes }: { checkedInAt?: string; checkedOutAt?: string; totalMinutes?: number | null }) {
+function dashboardTime(value?: string) {
+  if (!value) return "--";
+  return new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
+function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact = false }: { checkedInAt?: string; checkedOutAt?: string; totalMinutes?: number | null; compact?: boolean }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -88,6 +95,15 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes }: { check
   const elapsedSeconds = totalMinutes && checkedOutAt ? totalMinutes * 60 : Math.max(0, Math.floor((end - start) / 1000));
   const isComplete = Boolean(checkedOutAt);
 
+  if (compact) {
+    return (
+      <div>
+        <p className="text-xs font-medium text-muted">Duration</p>
+        <p className="mt-1 text-base font-semibold text-ink tabular-nums">{formatElapsedTime(elapsedSeconds)}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-brand">Working time</p>
@@ -97,7 +113,7 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes }: { check
   );
 }
 
-export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes }: Props) {
+export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes, status, compact = false }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
@@ -172,6 +188,96 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
 
   const disabled = nextAction === "done";
 
+  const actionDialog = (
+    <Dialog open={dialogOpen} onOpenChange={(open) => {
+      if (!open && (pending || locating)) return;
+      setDialogOpen(open);
+    }}>
+      <DialogTrigger asChild>
+        <Button className={compact ? "w-full shrink-0 sm:w-auto" : "w-full sm:w-auto"} disabled={disabled || pending || locating}>
+          {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Completed"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        title={nextAction === "check-in" ? "Confirm check in" : "Confirm check out"}
+        description="Your browser will ask for location once for this attendance action."
+      >
+        <div className="space-y-4">
+          {locationUnavailable ? (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
+                <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>{warning || "Location is unavailable. Add a note to submit for review."}</span>
+              </div>
+              <Textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Required note for review because location is unavailable."
+                rows={4}
+                disabled={disabled || pending}
+                required
+              />
+            </div>
+          ) : null}
+          <p className="text-sm text-muted">
+            vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, and device information. It does not track your movement continuously.
+          </p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary" disabled={pending || locating}>Cancel</Button>
+            </DialogClose>
+            {locationUnavailable ? (
+              <Button type="button" variant="secondary" disabled={pending || locating} onClick={() => captureAndSubmit(true)}>
+                {locating ? "Retrying..." : "Retry location"}
+              </Button>
+            ) : null}
+            <Button type="button" disabled={pending || locating} onClick={() => captureAndSubmit()}>
+              {pending ? "Submitting..." : locating ? "Getting location..." : locationUnavailable ? "Submit for review" : "Continue"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  if (compact) {
+    return (
+      <Card className="space-y-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="rounded-xl bg-brandSoft p-2.5 text-brand">
+              {disabled ? <Clock className="h-5 w-5" aria-hidden /> : <LocateFixed className="h-5 w-5" aria-hidden />}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-semibold text-ink">
+                  {nextAction === "check-in" ? "Start your workday" : nextAction === "check-out" ? "Workday in progress" : "Attendance complete"}
+                </h2>
+                {status ? <StatusBadge value={status} /> : null}
+              </div>
+              <p className="mt-1 truncate text-sm text-muted">
+                {lastLocation ? `Last location: ${lastLocation}` : "Location is captured only when you submit attendance."}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 border-y border-line py-3 xl:min-w-[320px] xl:border-x xl:border-y-0 xl:px-6 xl:py-0">
+            <div><p className="text-xs font-medium text-muted">Check in</p><p className="mt-1 text-base font-semibold text-ink">{dashboardTime(checkedInAt)}</p></div>
+            <div><p className="text-xs font-medium text-muted">Check out</p><p className="mt-1 text-base font-semibold text-ink">{dashboardTime(checkedOutAt)}</p></div>
+            {checkedInAt ? <WorkingTimeCounter compact checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} /> : <div><p className="text-xs font-medium text-muted">Duration</p><p className="mt-1 text-base font-semibold text-ink">--</p></div>}
+          </div>
+          {actionDialog}
+        </div>
+        {warning ? (
+          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
+            <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>{warning}</span>
+          </div>
+        ) : null}
+        {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
+      </Card>
+    );
+  }
+
   return (
     <Card className="space-y-4">
       <div className="flex items-start gap-3">
@@ -196,55 +302,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
         </div>
       ) : null}
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      <Dialog open={dialogOpen} onOpenChange={(open) => {
-        if (!open && (pending || locating)) return;
-        setDialogOpen(open);
-      }}>
-        <DialogTrigger asChild>
-          <Button className="w-full sm:w-auto" disabled={disabled || pending || locating}>
-            {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Done"}
-          </Button>
-        </DialogTrigger>
-        <DialogContent
-          title={nextAction === "check-in" ? "Confirm check in" : "Confirm check out"}
-          description="Your browser will ask for location once for this attendance action."
-        >
-          <div className="space-y-4">
-            {locationUnavailable ? (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
-                  <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  <span>{warning || "Location is unavailable. Add a note to submit for review."}</span>
-                </div>
-                <Textarea
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  placeholder="Required note for review because location is unavailable."
-                  rows={4}
-                  disabled={disabled || pending}
-                  required
-                />
-              </div>
-            ) : null}
-            <p className="text-sm text-muted">
-              vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, and device information. It does not track your movement continuously.
-            </p>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary" disabled={pending || locating}>Cancel</Button>
-              </DialogClose>
-              {locationUnavailable ? (
-                <Button type="button" variant="secondary" disabled={pending || locating} onClick={() => captureAndSubmit(true)}>
-                  {locating ? "Retrying..." : "Retry location"}
-                </Button>
-              ) : null}
-              <Button type="button" disabled={pending || locating} onClick={() => captureAndSubmit()}>
-                {pending ? "Submitting..." : locating ? "Getting location..." : locationUnavailable ? "Submit for review" : "Continue"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {actionDialog}
     </Card>
   );
 }
