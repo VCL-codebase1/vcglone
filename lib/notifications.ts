@@ -1,8 +1,20 @@
-import type { Role } from "@prisma/client";
+import type { Prisma, Role } from "@prisma/client";
 import { formatMonthDay, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/push-notifications";
 import { roleHome } from "@/lib/routes";
+
+const CHAT_NOTIFICATION_HREFS = ["/admin/chat", "/manager/chat", "/employee/chat"];
+
+export function generalNotificationWhere(userId: string): Prisma.NotificationWhereInput {
+  return {
+    userId,
+    OR: [
+      { href: null },
+      { href: { notIn: CHAT_NOTIFICATION_HREFS } }
+    ]
+  };
+}
 
 export type NotificationInput = {
   userId: string;
@@ -42,21 +54,22 @@ export async function createNotifications(inputs: NotificationInput[]) {
 
 export async function getRecentNotifications(userId: string) {
   return prisma.notification.findMany({
-    where: { userId },
+    where: generalNotificationWhere(userId),
     orderBy: { createdAt: "desc" },
     take: 12
   });
 }
 
 export async function getUnreadNotificationCount(userId: string) {
-  return prisma.notification.count({ where: { userId, readAt: null } });
+  return prisma.notification.count({ where: { ...generalNotificationWhere(userId), readAt: null } });
 }
 
 export async function getNotificationStatus(userId: string) {
+  const where = generalNotificationWhere(userId);
   const [unreadCount, latest] = await prisma.$transaction([
-    prisma.notification.count({ where: { userId, readAt: null } }),
+    prisma.notification.count({ where: { ...where, readAt: null } }),
     prisma.notification.findFirst({
-      where: { userId },
+      where,
       orderBy: { createdAt: "desc" },
       select: { id: true, title: true, message: true, href: true, createdAt: true }
     })

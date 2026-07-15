@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAuditLog } from "@/lib/audit";
 import { countWorkingDays, minutesBetween, todayDateOnly } from "@/lib/dates";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, generalNotificationWhere } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { canAdmin, canManageAccountRole, requireRole, requireUser } from "@/lib/rbac";
 import {
@@ -601,7 +601,7 @@ export async function markNotificationRead(formData: FormData) {
   if (!id) throw new Error("Missing notification id.");
 
   await prisma.notification.updateMany({
-    where: { id, userId: actor.id, readAt: null },
+    where: { ...generalNotificationWhere(actor.id), id, readAt: null },
     data: { readAt: new Date() }
   });
   revalidatePath("/");
@@ -610,7 +610,7 @@ export async function markNotificationRead(formData: FormData) {
 export async function markAllNotificationsRead() {
   const actor = await requireUser();
   await prisma.notification.updateMany({
-    where: { userId: actor.id, readAt: null },
+    where: { ...generalNotificationWhere(actor.id), readAt: null },
     data: { readAt: new Date() }
   });
   revalidatePath("/");

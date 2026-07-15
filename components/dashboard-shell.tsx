@@ -3,12 +3,14 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { LiveChatNotification, type ChatNotificationStatus } from "@/components/live-chat-notification";
 import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { authOptions } from "@/lib/auth";
+import { getChatNotificationStatus } from "@/lib/chat";
 import { ensureBirthdayNotificationsForUser, getNotificationStatus } from "@/lib/notifications";
-import { roleNotifications } from "@/lib/routes";
+import { roleChat, roleNotifications } from "@/lib/routes";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -42,12 +44,20 @@ export async function DashboardShell({
     role: session.user.role,
     firstName: session.user.firstName
   });
-  const status = await getNotificationStatus(session.user.id);
+  const [status, chatStatus] = await Promise.all([
+    getNotificationStatus(session.user.id),
+    getChatNotificationStatus(session.user.id, session.user.role)
+  ]);
   const initialNotificationStatus: NotificationStatus = {
     unreadCount: status.unreadCount,
     latest: status.latest ? { ...status.latest, createdAt: status.latest.createdAt.toISOString() } : null
   };
+  const initialChatStatus: ChatNotificationStatus = {
+    unreadCount: chatStatus.unreadCount,
+    latest: chatStatus.latest ? { ...chatStatus.latest, createdAt: chatStatus.latest.createdAt.toISOString() } : null
+  };
   const notificationUrl = roleNotifications(session.user.role);
+  const chatUrl = roleChat(session.user.role);
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
@@ -79,6 +89,7 @@ export async function DashboardShell({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <ThemeToggle />
+              <LiveChatNotification href={chatUrl} initialStatus={initialChatStatus} announce className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" />
               <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} announce className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" />
             </div>
           </div>
@@ -96,8 +107,9 @@ export async function DashboardShell({
             </Link>
             <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+          <div className="flex shrink-0 items-center gap-1 min-[421px]:gap-2">
+            <ThemeToggle className="max-[420px]:hidden" />
+            <LiveChatNotification href={chatUrl} initialStatus={initialChatStatus} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)] dark:bg-panel dark:text-blue-200" />
             <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" />
             <Drawer>
               <DrawerTrigger asChild>
@@ -110,6 +122,10 @@ export async function DashboardShell({
                   <div className="rounded-2xl border border-line bg-gradient-to-br from-brandSoft to-white p-4 shadow-[0_10px_28px_rgba(23,32,51,0.05)]">
                     <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
                     <p className="text-sm text-muted">{session.user.role.replace("_", " ")}</p>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-line bg-surface p-3">
+                    <div><p className="text-sm font-semibold text-ink">Appearance</p><p className="text-xs text-muted">Switch light or dark mode</p></div>
+                    <ThemeToggle />
                   </div>
                   <Link href="/api/auth/signout" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(180,83,9,0.16)]">
                     <LogOut className="h-4 w-4" aria-hidden />

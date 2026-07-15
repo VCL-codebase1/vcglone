@@ -11,3 +11,9 @@ export function roleNotifications(role?: Role | string | null) {
   if (role === "MANAGER") return "/manager/notifications";
   return "/employee/notifications";
 }
+
+export function roleChat(role?: Role | string | null) {
+  if (role === "SUPER_ADMIN" || role === "HR_ADMIN") return "/admin/chat";
+  if (role === "MANAGER") return "/manager/chat";
+  return "/employee/chat";
+}

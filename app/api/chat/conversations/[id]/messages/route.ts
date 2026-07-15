@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { createNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { roleChat } from "@/lib/routes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,12 +25,6 @@ async function getMembership(conversationId: string, userId: string) {
   return prisma.conversationMember.findUnique({
     where: { conversationId_userId: { conversationId, userId } }
   });
-}
-
-function chatHref(role: string) {
-  if (role === "HR_ADMIN" || role === "SUPER_ADMIN") return "/admin/chat";
-  if (role === "MANAGER") return "/manager/chat";
-  return "/employee/chat";
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -170,7 +165,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
             ? "New message in Everyone"
             : conversation.type === "GROUP" ? `New message in ${conversation.name || "group chat"}` : `New message from ${session.user.firstName}`,
           message: parsed.data.body.slice(0, 160) || (message.attachments.length === 1 ? "Sent an attachment." : `Sent ${message.attachments.length} attachments.`),
-          href: chatHref(member.user.role)
+          href: roleChat(member.user.role)
         })));
     }
   }
