@@ -74,6 +74,9 @@ export async function GET() {
       canManage: conversation.type === ConversationType.GROUP && conversation.slug !== "everyone" && (conversation.createdById === session.user.id || ["HR_ADMIN", "SUPER_ADMIN"].includes(session.user.role)),
       updatedAt: conversation.updatedAt,
       unreadCount: unreadByConversation.get(conversation.id) || 0,
+      pinned: Boolean(membership.pinnedAt),
+      muted: membership.muted,
+      archived: Boolean(membership.archivedAt),
       members: conversation.members.map((member) => ({
         id: member.user.id,
         name: `${member.user.firstName} ${member.user.lastName}`,

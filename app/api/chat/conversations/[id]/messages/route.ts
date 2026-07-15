@@ -9,7 +9,10 @@ import { roleChat } from "@/lib/routes";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const messageSchema = z.object({ body: z.string().trim().max(4000, "Messages are limited to 4,000 characters.") });
+const messageSchema = z.object({
+  body: z.string().trim().max(4000, "Messages are limited to 4,000 characters."),
+  replyToId: z.string().trim().min(1).optional()
+});
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 5;
 const allowedMimeTypes = new Set([
@@ -42,6 +45,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
     where: { conversationId: params.id, deletedAt: null, createdAt: before ? { lt: before } : undefined },
     include: {
       sender: { select: { id: true, firstName: true, lastName: true } },
+      replyTo: {
+        select: {
+          id: true,
+          body: true,
+          deletedAt: true,
+          sender: { select: { id: true, firstName: true, lastName: true } }
+        }
+      },
       attachments: { select: { id: true, fileName: true, mimeType: true, size: true } },
       reactions: { include: { user: { select: { id: true, firstName: true, lastName: true } } } }
     },
@@ -64,6 +75,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     .filter((member) => member.userId !== session.user.id && member.typingUntil && member.typingUntil > new Date())
     .map((member) => `${member.user.firstName} ${member.user.lastName}`);
 
+  const firstUnreadMessageId = orderedMessages.find((message) => message.senderId !== session.user.id && message.createdAt > membership.lastReadAt)?.id || null;
+
   return NextResponse.json({
     messages: orderedMessages.map((message) => {
       const reactions = Array.from(new Set(message.reactions.map((reaction) => reaction.emoji))).map((emoji) => {
@@ -83,6 +96,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
         edited: message.updatedAt.getTime() - message.createdAt.getTime() > 1_000,
         mine: message.senderId === session.user.id,
         sender: { id: message.sender.id, name: `${message.sender.firstName} ${message.sender.lastName}` },
+        replyTo: message.replyTo && !message.replyTo.deletedAt ? {
+          id: message.replyTo.id,
+          body: message.replyTo.body,
+          sender: { id: message.replyTo.sender.id, name: `${message.replyTo.sender.firstName} ${message.replyTo.sender.lastName}` }
+        } : null,
         attachments: message.attachments.map((attachment) => ({ ...attachment, url: `/api/chat/attachments/${attachment.id}` })),
         reactions,
         readBy: members
@@ -91,6 +109,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       };
     }),
     hasMore: messages.length === 50,
+    firstUnreadMessageId,
     typingMembers
   }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -105,7 +124,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   let files: File[] = [];
   if (request.headers.get("content-type")?.includes("multipart/form-data")) {
     const formData = await request.formData();
-    rawBody = { body: String(formData.get("body") || "") };
+    rawBody = { body: String(formData.get("body") || ""), replyToId: formData.get("replyToId") ? String(formData.get("replyToId")) : undefined };
     files = formData.getAll("files").filter((item): item is File => item instanceof File);
   } else {
     rawBody = await request.json().catch(() => null);
@@ -119,6 +138,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return file.size > MAX_FILE_SIZE || (!allowedMimeTypes.has(file.type) && !allowedExtensions.has(extension));
   });
   if (invalidFile) return NextResponse.json({ message: `${invalidFile.name} is unsupported or larger than 5 MB.` }, { status: 400 });
+  if (parsed.data.replyToId) {
+    const replyTarget = await prisma.chatMessage.findFirst({
+      where: { id: parsed.data.replyToId, conversationId: params.id, deletedAt: null },
+      select: { id: true }
+    });
+    if (!replyTarget) return NextResponse.json({ message: "The message you are replying to is unavailable." }, { status: 400 });
+  }
   const attachmentData = await Promise.all(files.map(async (file) => ({
     fileName: file.name.slice(0, 255),
     mimeType: file.type || "application/octet-stream",
@@ -131,11 +157,20 @@ export async function POST(request: Request, { params }: { params: { id: string 
       data: {
         conversationId: params.id,
         senderId: session.user.id,
+        replyToId: parsed.data.replyToId,
         body: parsed.data.body,
         attachments: attachmentData.length ? { create: attachmentData } : undefined
       },
       include: {
         sender: { select: { id: true, firstName: true, lastName: true } },
+        replyTo: {
+          select: {
+            id: true,
+            body: true,
+            deletedAt: true,
+            sender: { select: { id: true, firstName: true, lastName: true } }
+          }
+        },
         attachments: { select: { id: true, fileName: true, mimeType: true, size: true } }
       }
     }),
@@ -155,6 +190,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (conversation) {
     const offlineRecipients = conversation.members.filter((member) => (
       member.userId !== session.user.id
+      && !member.muted
       && member.user.employmentStatus === "ACTIVE"
       && (!member.user.chatLastSeenAt || member.user.chatLastSeenAt < new Date(Date.now() - 70_000))
     ));
@@ -179,6 +215,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       mine: true,
       edited: false,
       sender: { id: message.sender.id, name: `${message.sender.firstName} ${message.sender.lastName}` },
+      replyTo: message.replyTo && !message.replyTo.deletedAt ? {
+        id: message.replyTo.id,
+        body: message.replyTo.body,
+        sender: { id: message.replyTo.sender.id, name: `${message.replyTo.sender.firstName} ${message.replyTo.sender.lastName}` }
+      } : null,
       attachments: message.attachments.map((attachment) => ({ ...attachment, url: `/api/chat/attachments/${attachment.id}` })),
       reactions: [],
       readBy: []

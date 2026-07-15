@@ -357,6 +357,9 @@ model ConversationMember {
   joinedAt       DateTime @default(now())
   lastReadAt     DateTime @default(now())
   typingUntil    DateTime?
+  pinnedAt       DateTime?
+  muted          Boolean  @default(false)
+  archivedAt     DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -370,6 +373,7 @@ model ChatMessage {
   id             String    @id @default(cuid())
   conversationId String
   senderId       String
+  replyToId      String?
   body           String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -377,11 +381,14 @@ model ChatMessage {
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  replyTo      ChatMessage? @relation("ChatMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      ChatMessage[] @relation("ChatMessageReplies")
   attachments  ChatAttachment[]
   reactions    ChatReaction[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+  @@index([replyToId])
 }
 
 model ChatAttachment {

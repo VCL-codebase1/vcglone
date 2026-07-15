@@ -11,12 +11,14 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   const query = new URL(request.url).searchParams.get("q")?.trim();
+  const conversationId = new URL(request.url).searchParams.get("conversation")?.trim();
   if (!query || query.length < 2) return NextResponse.json({ results: [] });
 
   const messages = await prisma.chatMessage.findMany({
     where: {
       deletedAt: null,
       body: { contains: query, mode: "insensitive" },
+      conversationId: conversationId || undefined,
       conversation: { members: { some: { userId: session.user.id } } }
     },
     include: {
