@@ -40,6 +40,8 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
       const leave = leaveByEmployee.get(employee.id);
       const statusCategory = leave
         ? "on-leave"
+        : attendance?.requiresReview
+          ? "pending-review"
         : attendance?.checkOutTime
           ? "checked-out"
           : attendance?.checkInTime
@@ -47,6 +49,7 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
             : "not-checked-in";
       return { employee, attendance, leave, statusCategory };
     })
+    .filter(({ attendance }) => Boolean(attendance?.checkInTime))
     .filter(({ employee, statusCategory }) => {
       const matchesSearch = !normalizedSearch || [employee.firstName, employee.lastName, employee.employeeId, employee.email]
         .filter(Boolean)
@@ -59,16 +62,18 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
     });
 
   const activeEmployeeIds = new Set(employees.map((employee) => employee.id));
+  const checkedInEmployeeIds = new Set(attendanceRecords.filter((record) => activeEmployeeIds.has(record.employeeId) && record.checkInTime).map((record) => record.employeeId));
   const checkedIn = attendanceRecords.filter((record) => activeEmployeeIds.has(record.employeeId) && record.checkInTime).length;
+  const currentlyCheckedIn = attendanceRecords.filter((record) => activeEmployeeIds.has(record.employeeId) && record.checkInTime && !record.checkOutTime).length;
   const checkedOut = attendanceRecords.filter((record) => activeEmployeeIds.has(record.employeeId) && record.checkOutTime).length;
-  const onLeave = new Set(approvedLeave.filter((request) => activeEmployeeIds.has(request.employeeId)).map((request) => request.employeeId)).size;
-  const notCheckedIn = employees.filter((employee) => !attendanceByEmployee.get(employee.id)?.checkInTime && !leaveByEmployee.has(employee.id)).length;
+  const onLeave = new Set(approvedLeave.filter((request) => checkedInEmployeeIds.has(request.employeeId)).map((request) => request.employeeId)).size;
+  const pendingReview = attendanceRecords.filter((record) => activeEmployeeIds.has(record.employeeId) && record.checkInTime && record.requiresReview).length;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Today's Attendance"
-        description={`${formatDate(today)} snapshot of every active staff member. This page updates automatically.`}
+        description={`${formatDate(today)} check-ins only. Employees appear here after they check in, and the page updates automatically.`}
         action={(
           <div className="flex flex-col gap-2 sm:flex-row">
             <AttendanceLiveRefresh />
@@ -78,11 +83,11 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="Active staff" value={employees.length} />
         <StatCard label="Checked in" value={checkedIn} />
+        <StatCard label="Currently checked in" value={currentlyCheckedIn} />
         <StatCard label="Checked out" value={checkedOut} />
-        <StatCard label="On leave" value={onLeave} />
-        <StatCard label="Not checked in" value={notCheckedIn} detail="Excludes approved leave" />
+        <StatCard label="On leave and checked in" value={onLeave} />
+        <StatCard label="Pending review" value={pendingReview} />
       </div>
 
       <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
@@ -102,7 +107,7 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
           <option value="checked-in">Checked in, not out</option>
           <option value="checked-out">Checked out</option>
           <option value="on-leave">On approved leave</option>
-          <option value="not-checked-in">Not checked in</option>
+          <option value="pending-review">Pending review</option>
         </select>
         <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
       </form>
@@ -125,13 +130,13 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
                   <td className="px-4 py-3">{formatTime(attendance?.checkOutTime)}</td>
                   <td className="px-4 py-3">{compactDuration(attendance?.totalMinutes)}</td>
                   <td className="max-w-xs px-4 py-3 text-muted">{location}</td>
-                  <td className="px-4 py-3"><div className="flex flex-wrap gap-2">{leave ? <StatusBadge value={leave.leaveType.name} /> : null}{attendance ? <StatusBadge value={attendance.status} /> : leave ? null : <StatusBadge value="NOT_CHECKED_IN" />}</div></td>
+                  <td className="px-4 py-3"><div className="flex flex-wrap gap-2">{leave ? <StatusBadge value={leave.leaveType.name} /> : null}{attendance ? <StatusBadge value={attendance.status} /> : null}</div></td>
                 </tr>
               );
             })}
           </tbody>
         </Table>
-      ) : <EmptyState title="No matching staff" description="Try clearing or changing the attendance filters." />}
+      ) : <EmptyState title="No check-ins found" description="No one matching these filters has checked in today." />}
     </div>
   );
 }
