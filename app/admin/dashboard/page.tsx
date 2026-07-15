@@ -98,7 +98,7 @@ export default async function AdminDashboardPage() {
         <StatCard label="Present today" value={checkedIn} detail="Late policy calculation can be enabled later." />
         <StatCard label="Late count" value={0} detail="Work policy placeholder" />
       </div>
-      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-2">
         <section className="min-w-0 space-y-3">
           <h2 className="font-semibold text-ink">Today&apos;s attendance</h2>
           <TodayAttendanceDataTable data={todayAttendanceRows} />

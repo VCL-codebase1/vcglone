@@ -21,7 +21,7 @@ export function BirthdaysThisMonthCard({ birthdays }: { birthdays: BirthdayPerso
   });
 
   return (
-    <Card className="space-y-4 overflow-hidden">
+    <Card className="h-fit self-start space-y-4 overflow-hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brandSoft text-brand">
