@@ -21,6 +21,11 @@ export default async function ReportsPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5">
+          <h2 className="font-semibold text-ink">Task analytics and reports</h2>
+          <p className="mt-1 text-sm text-muted">Analyze organization, department, and employee delivery, then export daily, weekly, or monthly task reports.</p>
+          <LinkButton href="/admin/task-reports" className="mt-4" variant="secondary">Open task analytics</LinkButton>
+        </section>
+        <section className="rounded-lg border border-line bg-white p-4 shadow-soft sm:p-5">
           <h2 className="font-semibold text-ink">Daily attendance report</h2>
           <p className="mt-1 text-sm text-muted">Export with optional date/status filters from the attendance page.</p>
           <LinkButton href="/api/reports/attendance" className="mt-4" variant="secondary">Export attendance CSV</LinkButton>

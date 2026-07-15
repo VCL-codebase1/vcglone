@@ -17,3 +17,9 @@ export function roleChat(role?: Role | string | null) {
   if (role === "MANAGER") return "/manager/chat";
   return "/employee/chat";
 }
+
+export function roleTasks(role?: Role | string | null) {
+  if (role === "SUPER_ADMIN" || role === "HR_ADMIN") return "/admin/my-tasks";
+  if (role === "MANAGER") return "/manager/my-tasks";
+  return "/employee/tasks";
+}

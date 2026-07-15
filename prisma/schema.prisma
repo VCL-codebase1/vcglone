@@ -61,6 +61,28 @@ enum ConversationType {
   GROUP
 }
 
+enum TaskStatus {
+  ASSIGNED
+  IN_PROGRESS
+  BLOCKED
+  IN_REVIEW
+  CHANGES_REQUESTED
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskResourceType {
+  LINK
+  FILE
+}
+
 model User {
   id               String             @id @default(cuid())
   employeeId       String?            @unique
@@ -107,6 +129,12 @@ model User {
   conversationMemberships ConversationMember[]
   chatMessages      ChatMessage[]           @relation("ChatMessageSender")
   chatReactions     ChatReaction[]
+  assignedTasks     Task[]                  @relation("TaskAssignee")
+  delegatedTasks    Task[]                  @relation("TaskAssigner")
+  taskComments      TaskComment[]
+  taskActivities    TaskActivity[]          @relation("TaskActivityActor")
+  taskResources     TaskResource[]          @relation("TaskResourceUploader")
+  taskReminderDeliveries TaskReminderDelivery[]
 
   @@index([departmentId])
   @@index([managerId])
@@ -418,4 +446,109 @@ model ChatReaction {
   @@unique([messageId, userId, emoji])
   @@index([messageId])
   @@index([userId])
+}
+
+model Task {
+  id                 String       @id @default(cuid())
+  taskCode           String       @unique
+  name               String
+  description        String       @db.Text
+  expectedOutcome    String?      @db.Text
+  assigneeId         String
+  assignedById       String
+  priority           TaskPriority @default(MEDIUM)
+  status             TaskStatus   @default(ASSIGNED)
+  startAt            DateTime?
+  dueAt              DateTime
+  reminderOffsets    Int[]        @default([1440, 120, 0])
+  blockedReason      String?      @db.Text
+  submissionNote     String?      @db.Text
+  reviewComment      String?      @db.Text
+  startedAt          DateTime?
+  blockedAt          DateTime?
+  submittedAt        DateTime?
+  approvedAt         DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  assignee           User                   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  assignedBy         User                   @relation("TaskAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
+  resources          TaskResource[]
+  comments           TaskComment[]
+  activities         TaskActivity[]
+  reminderDeliveries TaskReminderDelivery[]
+
+  @@index([assigneeId, status])
+  @@index([assignedById, status])
+  @@index([status, dueAt])
+  @@index([dueAt])
+}
+
+model TaskResource {
+  id         String           @id @default(cuid())
+  taskId     String
+  uploaderId String
+  type       TaskResourceType
+  title      String
+  url        String?          @db.Text
+  fileName   String?
+  mimeType   String?
+  size       Int?
+  data       Bytes?
+  createdAt  DateTime         @default(now())
+
+  task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader   User @relation("TaskResourceUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@index([uploaderId])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([authorId])
+}
+
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  actorId   String?
+  action    String
+  message   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  task      Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor     User? @relation("TaskActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+  @@index([actorId])
+}
+
+model TaskReminderDelivery {
+  id           String   @id @default(cuid())
+  taskId       String
+  userId       String
+  kind         String
+  scheduledFor DateTime
+  sentAt       DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  task         Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId, kind, scheduledFor])
+  @@index([userId, sentAt])
+  @@index([taskId])
 }

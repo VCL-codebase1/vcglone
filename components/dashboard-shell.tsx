@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, FileText, LayoutDashboard, ListChecks, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -11,6 +11,7 @@ import { authOptions } from "@/lib/auth";
 import { getChatNotificationStatus } from "@/lib/chat";
 import { ensureBirthdayNotificationsForUser, getNotificationStatus } from "@/lib/notifications";
 import { roleChat, roleNotifications } from "@/lib/routes";
+import { ensureTaskRemindersForUser } from "@/lib/task-reminders";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -19,7 +20,8 @@ const iconMap = {
   users: Users,
   reports: FileText,
   settings: Settings,
-  chat: MessageSquare
+  chat: MessageSquare,
+  tasks: ListChecks
 };
 
 type NavItem = {
@@ -39,11 +41,10 @@ export async function DashboardShell({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  await ensureBirthdayNotificationsForUser({
-    id: session.user.id,
-    role: session.user.role,
-    firstName: session.user.firstName
-  });
+  await Promise.all([
+    ensureBirthdayNotificationsForUser({ id: session.user.id, role: session.user.role, firstName: session.user.firstName }),
+    ensureTaskRemindersForUser({ id: session.user.id, role: session.user.role })
+  ]);
   const [status, chatStatus] = await Promise.all([
     getNotificationStatus(session.user.id),
     getChatNotificationStatus(session.user.id, session.user.role)

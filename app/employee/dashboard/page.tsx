@@ -3,6 +3,7 @@ import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { EmployeeDashboardActivity } from "@/components/employee-dashboard-activity";
 import { LiveClock } from "@/components/live-clock";
+import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -67,6 +68,7 @@ export default async function EmployeeDashboardPage() {
         checkedOutAt={record?.checkOutTime?.toISOString()}
         totalMinutes={record?.totalMinutes}
       />
+      <TaskDashboardPanel user={{ id: user.id, role: user.role }} scope="mine" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <EmployeeDashboardActivity attendance={attendanceActivity} leave={leaveActivity} />
         <div className="space-y-5">

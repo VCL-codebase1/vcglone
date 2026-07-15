@@ -39,6 +39,7 @@
     "lucide-react": "^0.468.0",
     "next": "14.2.23",
     "next-auth": "^4.24.11",
+    "pdfkit": "^0.19.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-error-boundary": "^6.1.2",
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.17.10",
+    "@types/pdfkit": "^0.17.6",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "@types/web-push": "^3.6.4",

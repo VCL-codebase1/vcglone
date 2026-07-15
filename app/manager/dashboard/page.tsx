@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { DashboardMetricStrip, DashboardSectionHeader } from "@/components/dashboard-overview";
+import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
 import { Card, EmptyState, LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -67,6 +68,7 @@ export default async function ManagerDashboardPage() {
         { label: "On leave", value: onLeaveEmployeeIds.size, detail: "Approved leave today", href: "/manager/leave-calendar" },
         { label: "Pending approvals", value: pendingLeave, detail: "Requires your decision", href: "/manager/leave-approvals", attention: pendingLeave > 0 }
       ]} />
+      <TaskDashboardPanel user={{ id: user.id, role: user.role }} scope="team" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <section className="min-w-0 space-y-3">
           <DashboardSectionHeader title="Team attendance" description="The latest six check-ins for today." href="/manager/attendance" linkLabel="View full attendance" />

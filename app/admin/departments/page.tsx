@@ -1,6 +1,6 @@
 import { createDepartment, updateDepartment } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
-import { Button, Card, Field, Input, PageHeader, Select, Table, Textarea } from "@/components/ui";
+import { Button, Card, Field, Input, LinkButton, PageHeader, Select, Table, Textarea } from "@/components/ui";
 
 export const runtime = "nodejs";
 
@@ -41,7 +41,7 @@ export default async function DepartmentsPage() {
               <td className="px-4 py-3">
                 <Textarea name="description" form={`department-${department.id}`} defaultValue={department.description || ""} rows={2} />
               </td>
-              <td className="px-4 py-3"><Button type="submit" form={`department-${department.id}`} variant="secondary">Save</Button></td>
+              <td className="px-4 py-3"><div className="flex flex-col gap-2"><Button type="submit" form={`department-${department.id}`} variant="secondary">Save</Button><LinkButton href={`/admin/tasks?departmentId=${department.id}`} variant="secondary">View tasks</LinkButton></div></td>
             </tr>
           ))}
         </tbody>

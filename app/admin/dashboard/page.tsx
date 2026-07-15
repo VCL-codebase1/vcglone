@@ -5,6 +5,7 @@ import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { DashboardMetricStrip, DashboardSectionHeader } from "@/components/dashboard-overview";
 import { TodayAttendanceDataTable } from "@/components/dashboard-tables";
 import { SystemPulse } from "@/components/system-pulse";
+import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
 import { Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -97,6 +98,7 @@ export default async function AdminDashboardPage() {
         { label: "On leave", value: onLeave, detail: "Approved leave today", href: "/admin/leave-requests?status=APPROVED" },
         { label: "Pending review", value: pendingReview, detail: "Attendance exceptions", href: "/admin/attendance?location=missing", attention: pendingReview > 0 }
       ]} />
+      <TaskDashboardPanel user={{ id: actor.id, role: actor.role }} scope="organization" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <section className="min-w-0 space-y-3">
           <DashboardSectionHeader title="Today’s attendance" description="The latest eight attendance updates." href="/admin/today-attendance" linkLabel="View full attendance" />

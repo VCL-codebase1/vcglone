@@ -262,3 +262,23 @@ input[type="date"]::-webkit-date-and-time-value {
     margin-top: 1px !important;
   }
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  body:has(.task-report-print) aside,
+  body:has(.task-report-print) header {
+    display: none !important;
+  }
+
+  body:has(.task-report-print) main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .task-report-print {
+    color: #172033 !important;
+  }
+}
