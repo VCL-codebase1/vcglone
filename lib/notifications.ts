@@ -1,9 +1,10 @@
 import type { Role } from "@prisma/client";
 import { formatMonthDay, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { sendPushToUser } from "@/lib/push-notifications";
 import { roleHome } from "@/lib/routes";
 
-type NotificationInput = {
+export type NotificationInput = {
   userId: string;
   title: string;
   message: string;
@@ -11,7 +12,7 @@ type NotificationInput = {
 };
 
 export async function createNotification({ userId, title, message, href }: NotificationInput) {
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: {
       userId,
       title,
@@ -19,6 +20,24 @@ export async function createNotification({ userId, title, message, href }: Notif
       href
     }
   });
+  await sendPushToUser(userId, {
+    id: notification.id,
+    title,
+    message,
+    href: href || null
+  });
+  return notification;
+}
+
+export async function createNotifications(inputs: NotificationInput[]) {
+  if (!inputs.length) return { count: 0 };
+  const result = await prisma.notification.createMany({ data: inputs });
+  await Promise.all(inputs.map((input) => sendPushToUser(input.userId, {
+    title: input.title,
+    message: input.message,
+    href: input.href || null
+  })));
+  return result;
 }
 
 export async function getRecentNotifications(userId: string) {
@@ -31,6 +50,18 @@ export async function getRecentNotifications(userId: string) {
 
 export async function getUnreadNotificationCount(userId: string) {
   return prisma.notification.count({ where: { userId, readAt: null } });
+}
+
+export async function getNotificationStatus(userId: string) {
+  const [unreadCount, latest] = await prisma.$transaction([
+    prisma.notification.count({ where: { userId, readAt: null } }),
+    prisma.notification.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, message: true, href: true, createdAt: true }
+    })
+  ]);
+  return { unreadCount, latest };
 }
 
 function dateMatchesToday(date: Date | null, today: Date) {

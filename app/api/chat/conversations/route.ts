@@ -26,12 +26,15 @@ export async function GET() {
         include: {
           members: {
             include: {
-              user: { select: { id: true, firstName: true, lastName: true, jobTitle: true, employmentStatus: true } }
+              user: { select: { id: true, firstName: true, lastName: true, jobTitle: true, employmentStatus: true, chatLastSeenAt: true } }
             }
           },
           messages: {
             where: { deletedAt: null },
-            include: { sender: { select: { id: true, firstName: true, lastName: true } } },
+            include: {
+              sender: { select: { id: true, firstName: true, lastName: true } },
+              attachments: { select: { id: true } }
+            },
             orderBy: { createdAt: "desc" },
             take: 1
           }
@@ -67,16 +70,20 @@ export async function GET() {
       id: conversation.id,
       type: conversation.type,
       title,
+      everyone: conversation.slug === "everyone",
+      canManage: conversation.type === ConversationType.GROUP && conversation.slug !== "everyone" && (conversation.createdById === session.user.id || ["HR_ADMIN", "SUPER_ADMIN"].includes(session.user.role)),
       updatedAt: conversation.updatedAt,
       unreadCount: unreadByConversation.get(conversation.id) || 0,
       members: conversation.members.map((member) => ({
         id: member.user.id,
         name: `${member.user.firstName} ${member.user.lastName}`,
         jobTitle: member.user.jobTitle,
-        active: member.user.employmentStatus === "ACTIVE"
+        active: member.user.employmentStatus === "ACTIVE",
+        online: Boolean(member.user.chatLastSeenAt && member.user.chatLastSeenAt > new Date(Date.now() - 70_000)),
+        lastSeenAt: member.user.chatLastSeenAt
       })),
       lastMessage: lastMessage ? {
-        body: lastMessage.body,
+        body: lastMessage.body || (lastMessage.attachments.length === 1 ? "Sent an attachment" : `Sent ${lastMessage.attachments.length} attachments`),
         senderName: lastMessage.senderId === session.user.id ? "You" : lastMessage.sender.firstName,
         createdAt: lastMessage.createdAt
       } : null
@@ -114,16 +121,24 @@ export async function POST(request: Request) {
     if (existing) return NextResponse.json({ conversation: existing });
   }
 
-  const conversation = await prisma.conversation.create({
-    data: {
-      type: parsed.data.type,
-      name: parsed.data.type === ConversationType.GROUP ? parsed.data.name : null,
-      directKey,
-      createdById: session.user.id,
-      members: { create: allMemberIds.map((userId) => ({ userId })) }
-    },
-    select: { id: true }
-  });
+  let conversation: { id: string };
+  try {
+    conversation = await prisma.conversation.create({
+      data: {
+        type: parsed.data.type,
+        name: parsed.data.type === ConversationType.GROUP ? parsed.data.name : null,
+        directKey,
+        createdById: session.user.id,
+        members: { create: allMemberIds.map((userId) => ({ userId })) }
+      },
+      select: { id: true }
+    });
+  } catch (error) {
+    if (!directKey || (error as { code?: string }).code !== "P2002") throw error;
+    const existing = await prisma.conversation.findUnique({ where: { directKey }, select: { id: true } });
+    if (!existing) throw error;
+    return NextResponse.json({ conversation: existing });
+  }
 
   await createAuditLog({
     actorId: session.user.id,

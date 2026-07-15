@@ -1,6 +1,7 @@
 {
   "name": "vcglOne Workforce Operations",
   "short_name": "vcglOne",
+  "id": "/",
   "description": "Internal workforce operations platform for attendance, leave, employee records, reporting, and audit logs.",
   "start_url": "/",
   "scope": "/",

@@ -479,6 +479,11 @@ export async function createEmployee(formData: FormData) {
     }
   });
 
+  const everyoneConversation = await prisma.conversation.findUnique({ where: { slug: "everyone" }, select: { id: true } });
+  if (everyoneConversation) {
+    await prisma.conversationMember.create({ data: { conversationId: everyoneConversation.id, userId: employee.id } });
+  }
+
   const leaveTypes = await prisma.leaveType.findMany({ where: { active: true } });
   await prisma.leaveBalance.createMany({
     data: leaveTypes.map((type) => ({

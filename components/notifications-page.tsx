@@ -1,4 +1,5 @@
 import { NotificationCenter } from "@/components/notification-center";
+import { PushNotificationSettings } from "@/components/push-notification-settings";
 import { PageHeader } from "@/components/ui";
 import { getRecentNotifications, getUnreadNotificationCount } from "@/lib/notifications";
 import { requireUser } from "@/lib/rbac";
@@ -13,6 +14,7 @@ export async function NotificationsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title="Notifications" description="Review account updates, approvals, attendance events, and completed actions." />
+      <PushNotificationSettings />
       <NotificationCenter notifications={notifications} unreadCount={unreadCount} />
     </div>
   );

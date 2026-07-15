@@ -81,6 +81,7 @@ model User {
   maritalStatus    MaritalStatus?
   aboutMe          String?
   expertise        String?
+  chatLastSeenAt   DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
@@ -101,9 +102,11 @@ model User {
   educationDetails  EducationDetail[]
   dependents        Dependent[]
   notifications     Notification[]
+  webPushSubscriptions WebPushSubscription[]
   createdConversations Conversation[]       @relation("ConversationCreator")
   conversationMemberships ConversationMember[]
   chatMessages      ChatMessage[]           @relation("ChatMessageSender")
+  chatReactions     ChatReaction[]
 
   @@index([departmentId])
   @@index([managerId])
@@ -314,10 +317,26 @@ model Notification {
   @@index([createdAt])
 }
 
+model WebPushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Conversation {
   id          String           @id @default(cuid())
   type        ConversationType
   name        String?
+  slug        String?          @unique
   directKey   String?          @unique
   createdById String?
   createdAt   DateTime         @default(now())
@@ -337,6 +356,7 @@ model ConversationMember {
   userId         String
   joinedAt       DateTime @default(now())
   lastReadAt     DateTime @default(now())
+  typingUntil    DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -357,7 +377,38 @@ model ChatMessage {
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  attachments  ChatAttachment[]
+  reactions    ChatReaction[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model ChatAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  fileName  String
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model ChatReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
 }

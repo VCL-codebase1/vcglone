@@ -1,12 +1,14 @@
-import { Bell, CalendarCheck, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { authOptions } from "@/lib/auth";
-import { ensureBirthdayNotificationsForUser, getUnreadNotificationCount } from "@/lib/notifications";
+import { ensureBirthdayNotificationsForUser, getNotificationStatus } from "@/lib/notifications";
+import { roleNotifications } from "@/lib/routes";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -24,12 +26,6 @@ type NavItem = {
   icon: keyof typeof iconMap;
 };
 
-function notificationsHref(role?: string | null) {
-  if (role === "HR_ADMIN" || role === "SUPER_ADMIN") return "/admin/notifications";
-  if (role === "MANAGER") return "/manager/notifications";
-  return "/employee/notifications";
-}
-
 export async function DashboardShell({
   children,
   nav,
@@ -46,8 +42,12 @@ export async function DashboardShell({
     role: session.user.role,
     firstName: session.user.firstName
   });
-  const unreadCount = await getUnreadNotificationCount(session.user.id);
-  const notificationUrl = notificationsHref(session.user.role);
+  const status = await getNotificationStatus(session.user.id);
+  const initialNotificationStatus: NotificationStatus = {
+    unreadCount: status.unreadCount,
+    latest: status.latest ? { ...status.latest, createdAt: status.latest.createdAt.toISOString() } : null
+  };
+  const notificationUrl = roleNotifications(session.user.role);
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
@@ -79,10 +79,7 @@ export async function DashboardShell({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <ThemeToggle />
-              <Link href={notificationUrl} className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" aria-label="Open notifications">
-                <Bell className="h-4 w-4" aria-hidden />
-                {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
-              </Link>
+              <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} announce className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" />
             </div>
           </div>
           <Link href="/api/auth/signout" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-line transition hover:bg-amber-50 dark:bg-panel dark:text-amber-200 dark:hover:bg-amber-950/40">
@@ -101,10 +98,7 @@ export async function DashboardShell({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />
-            <Link href={notificationUrl} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" aria-label="Open notifications">
-              <Bell className="h-4 w-4" aria-hidden />
-              {unreadCount ? <span className="absolute -right-1 -top-1 rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount}</span> : null}
-            </Link>
+            <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" />
             <Drawer>
               <DrawerTrigger asChild>
                 <Button type="button" variant="secondary" className="h-10 w-10 px-0 max-[420px]:w-10" aria-label="Open account panel">

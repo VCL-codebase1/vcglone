@@ -6,11 +6,16 @@ export function PwaRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    window.addEventListener("load", () => {
+    const register = () => {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
         // Installability should not block normal app usage.
       });
-    });
+    };
+
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
+
+    return () => window.removeEventListener("load", register);
   }, []);
 
   return null;

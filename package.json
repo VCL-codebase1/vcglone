@@ -13,6 +13,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "push:keys": "web-push generate-vapid-keys",
     "db:reset": "prisma migrate reset"
   },
   "prisma": {
@@ -45,6 +46,7 @@
     "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
+    "web-push": "^3.6.7",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -52,6 +54,7 @@
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.23",
