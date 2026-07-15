@@ -16,6 +16,8 @@ type Props = {
 
 async function resolvePlaceName(coords: GeolocationCoordinates) {
   const fallback = `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 5_000);
 
   try {
     const url = new URL("https://nominatim.openstreetmap.org/reverse");
@@ -25,14 +27,42 @@ async function resolvePlaceName(coords: GeolocationCoordinates) {
     url.searchParams.set("zoom", "18");
     url.searchParams.set("addressdetails", "1");
 
-    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
     if (!response.ok) return fallback;
 
     const data = await response.json() as { display_name?: string; name?: string };
     return data.display_name || data.name || fallback;
   } catch {
     return fallback;
+  } finally {
+    window.clearTimeout(timeout);
   }
+}
+
+function getCurrentPosition(options: PositionOptions) {
+  return new Promise<GeolocationCoordinates>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      reject,
+      options
+    );
+  });
+}
+
+async function captureLocation() {
+  try {
+    return await getCurrentPosition({ enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 });
+  } catch (error) {
+    if ((error as GeolocationPositionError).code === 1) throw error;
+    return getCurrentPosition({ enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 });
+  }
+}
+
+function locationErrorMessage(error: unknown) {
+  const code = (error as GeolocationPositionError).code;
+  if (code === 1) return "Location permission is blocked. Enable location for this site in your browser settings, then retry, or add a note for review.";
+  if (code === 2) return "Your device could not determine its location. Turn on device location or Wi-Fi, then retry, or add a note for review.";
+  return "Location took too long to respond. Move near a window or turn on Wi-Fi, then retry, or add a note for review.";
 }
 
 function formatElapsedTime(totalSeconds: number) {
@@ -72,10 +102,11 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
   const [locationUnavailable, setLocationUnavailable] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  async function captureAndSubmit() {
+  async function captureAndSubmit(forceLocationRetry = false) {
     setMessage("");
     setWarning("");
     const submit = (coords?: GeolocationCoordinates) => {
@@ -103,7 +134,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
       });
     };
 
-    if (locationUnavailable) {
+    if (locationUnavailable && !forceLocationRetry) {
       if (!note.trim()) {
         setWarning("Add a note so attendance can be submitted for review.");
         return;
@@ -118,15 +149,25 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => submit(position.coords),
-      () => {
-        setWarning("Location permission was denied or unavailable. Add a note to submit for review.");
-        toast.warning("Location unavailable", { description: "Add a note so attendance can be submitted for review." });
-        setLocationUnavailable(true);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    );
+    if (!window.isSecureContext) {
+      setWarning("Location requires a secure HTTPS connection. Add a note to submit for review.");
+      setLocationUnavailable(true);
+      return;
+    }
+
+    setLocating(true);
+    try {
+      const coords = await captureLocation();
+      setLocationUnavailable(false);
+      submit(coords);
+    } catch (error) {
+      const errorMessage = locationErrorMessage(error);
+      setWarning(errorMessage);
+      toast.warning("Location unavailable", { description: errorMessage });
+      setLocationUnavailable(true);
+    } finally {
+      setLocating(false);
+    }
   }
 
   const disabled = nextAction === "done";
@@ -155,10 +196,13 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
         </div>
       ) : null}
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        if (!open && (pending || locating)) return;
+        setDialogOpen(open);
+      }}>
         <DialogTrigger asChild>
-          <Button className="w-full sm:w-auto" disabled={disabled || pending}>
-            {pending ? "Submitting..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Done"}
+          <Button className="w-full sm:w-auto" disabled={disabled || pending || locating}>
+            {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Done"}
           </Button>
         </DialogTrigger>
         <DialogContent
@@ -187,10 +231,15 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <DialogClose asChild>
-                <Button type="button" variant="secondary">Cancel</Button>
+                <Button type="button" variant="secondary" disabled={pending || locating}>Cancel</Button>
               </DialogClose>
-              <Button type="button" disabled={pending} onClick={captureAndSubmit}>
-                {pending ? "Submitting..." : locationUnavailable ? "Submit for review" : "Continue"}
+              {locationUnavailable ? (
+                <Button type="button" variant="secondary" disabled={pending || locating} onClick={() => captureAndSubmit(true)}>
+                  {locating ? "Retrying..." : "Retry location"}
+                </Button>
+              ) : null}
+              <Button type="button" disabled={pending || locating} onClick={() => captureAndSubmit()}>
+                {pending ? "Submitting..." : locating ? "Getting location..." : locationUnavailable ? "Submit for review" : "Continue"}
               </Button>
             </div>
           </div>

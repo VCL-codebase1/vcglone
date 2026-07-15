@@ -7,6 +7,7 @@ const nav = [
   { href: "/employee/attendance", label: "Attendance", icon: "attendance" as const },
   { href: "/employee/attendance/history", label: "History", icon: "reports" as const },
   { href: "/employee/leave", label: "Leave", icon: "leave" as const },
+  { href: "/employee/chat", label: "Chat", icon: "chat" as const },
   { href: "/employee/profile", label: "Profile", icon: "users" as const }
 ];
 

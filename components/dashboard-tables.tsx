@@ -9,6 +9,7 @@ type TodayAttendanceRow = {
   checkIn: string;
   checkOut: string;
   status: string;
+  attendanceStatus?: string;
 };
 
 const todayAttendanceColumns: ColumnDef<TodayAttendanceRow>[] = [
@@ -27,7 +28,12 @@ const todayAttendanceColumns: ColumnDef<TodayAttendanceRow>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => <StatusBadge value={row.original.status} />
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-2">
+        <StatusBadge value={row.original.status} />
+        {row.original.attendanceStatus ? <StatusBadge value={row.original.attendanceStatus} /> : null}
+      </div>
+    )
   }
 ];
 

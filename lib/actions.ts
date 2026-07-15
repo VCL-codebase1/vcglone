@@ -159,6 +159,9 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
     revalidatePath("/employee/dashboard");
     revalidatePath("/manager/dashboard");
     revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/today-attendance");
+    revalidatePath("/admin/attendance");
+    revalidatePath(`/admin/attendance/${record.id}`);
     return { ok: true, message: requiresReview ? "Checked in and marked pending review." : "Checked in successfully." };
   }
 
@@ -197,6 +200,9 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
   revalidatePath("/employee/dashboard");
   revalidatePath("/manager/dashboard");
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/today-attendance");
+  revalidatePath("/admin/attendance");
+  revalidatePath(`/admin/attendance/${record.id}`);
   return { ok: true, message: requiresReview ? "Checked out and marked pending review." : "Checked out successfully." };
 }
 
@@ -392,6 +398,9 @@ export async function decideLeaveRequest(formData: FormData) {
 
   revalidatePath("/manager/leave-approvals");
   revalidatePath("/admin/leave-requests");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/today-attendance");
+  revalidatePath("/admin/attendance");
   revalidatePath(selfServiceLeaveHref(request.employee.role));
   revalidatePath(selfServiceDashboardHref(request.employee.role));
   revalidatePath(`/admin/employees/${request.employeeId}`);
@@ -423,6 +432,7 @@ export async function manuallyAdjustAttendance(formData: FormData) {
   });
   await notifyActionCompleted(actor.id, "Attendance adjusted", "The attendance record was manually adjusted successfully.", `/admin/attendance/${updated.id}`);
   revalidatePath("/admin/attendance");
+  revalidatePath("/admin/today-attendance");
   revalidatePath(`/admin/attendance/${updated.id}`);
 }
 

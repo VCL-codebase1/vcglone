@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
+import { AttendanceLiveRefresh } from "@/components/attendance-live-refresh";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { TodayAttendanceDataTable } from "@/components/dashboard-tables";
 import { SystemPulse } from "@/components/system-pulse";
@@ -14,7 +15,7 @@ export default async function AdminDashboardPage() {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const today = todayDateOnly();
   const month = new Date().getMonth() + 1;
-  const [selfAttendance, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance, birthdays] = await Promise.all([
+  const [selfAttendance, totalEmployees, checkedIn, checkedOut, pendingReview, onLeave, pendingLeave, todayAttendance, todayLeave, birthdays] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: actor.id, date: today } } }),
     prisma.user.count({ where: { employmentStatus: "ACTIVE" } }),
     prisma.attendanceRecord.count({ where: { date: today, checkInTime: { not: null } } }),
@@ -22,7 +23,12 @@ export default async function AdminDashboardPage() {
     prisma.attendanceRecord.count({ where: { requiresReview: true } }),
     prisma.leaveRequest.count({ where: { status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } } }),
     prisma.leaveRequest.count({ where: { status: "PENDING" } }),
-    prisma.attendanceRecord.findMany({ where: { date: today }, include: { employee: true }, orderBy: { checkInTime: "desc" }, take: 10 }),
+    prisma.attendanceRecord.findMany({ where: { date: today }, include: { employee: true }, orderBy: { checkInTime: "desc" } }),
+    prisma.leaveRequest.findMany({
+      where: { status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } },
+      include: { employee: true, leaveType: true },
+      orderBy: { employee: { firstName: "asc" } }
+    }),
     prisma.user.findMany({
       where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
       include: { department: true },
@@ -30,12 +36,28 @@ export default async function AdminDashboardPage() {
     })
   ]);
   const birthdayRows = birthdays.filter((person) => person.dateOfBirth && person.dateOfBirth.getUTCMonth() + 1 === month);
-  const todayAttendanceRows = todayAttendance.map((record) => ({
-    employee: `${record.employee.firstName} ${record.employee.lastName}`,
-    checkIn: formatTime(record.checkInTime),
-    checkOut: formatTime(record.checkOutTime),
-    status: record.status
-  }));
+  const leaveByEmployee = new Map(todayLeave.map((request) => [request.employeeId, request]));
+  const attendanceEmployeeIds = new Set(todayAttendance.map((record) => record.employeeId));
+  const todayAttendanceRows = [
+    ...todayAttendance.map((record) => {
+      const leaveStatus = leaveByEmployee.get(record.employeeId)?.leaveType.name;
+      return {
+        employee: `${record.employee.firstName} ${record.employee.lastName}`,
+        checkIn: formatTime(record.checkInTime),
+        checkOut: formatTime(record.checkOutTime),
+        status: leaveStatus || record.status,
+        attendanceStatus: leaveStatus ? record.status : undefined
+      };
+    }),
+    ...todayLeave
+      .filter((request) => !attendanceEmployeeIds.has(request.employeeId))
+      .map((request) => ({
+        employee: `${request.employee.firstName} ${request.employee.lastName}`,
+        checkIn: "-",
+        checkOut: "-",
+        status: request.leaveType.name
+      }))
+  ];
   const nextAction = selfAttendance?.checkInTime && !selfAttendance.checkOutTime ? "check-out" : selfAttendance?.checkInTime && selfAttendance.checkOutTime ? "done" : "check-in";
   const location = selfAttendance?.checkOutPlaceName
     || selfAttendance?.checkInPlaceName
@@ -47,7 +69,16 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Admin Dashboard" description="Organization-wide attendance, leave, and workforce operations overview." action={<SystemPulse />} />
+      <PageHeader
+        title="Admin Dashboard"
+        description="Organization-wide attendance, leave, and workforce operations overview. Attendance updates automatically."
+        action={(
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <AttendanceLiveRefresh />
+            <SystemPulse />
+          </div>
+        )}
+      />
       {actor.role !== Role.SUPER_ADMIN ? (
         <AttendanceActionCard
           nextAction={nextAction}

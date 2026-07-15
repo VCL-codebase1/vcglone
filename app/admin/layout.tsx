@@ -4,9 +4,11 @@ import { requireRole } from "@/lib/rbac";
 
 const adminNav = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard" as const },
+  { href: "/admin/chat", label: "Chat", icon: "chat" as const },
   { href: "/admin/employees", label: "Employees", icon: "users" as const },
   { href: "/admin/departments", label: "Departments", icon: "users" as const },
-  { href: "/admin/attendance", label: "Attendance", icon: "attendance" as const },
+  { href: "/admin/today-attendance", label: "Today's Attendance", icon: "attendance" as const },
+  { href: "/admin/attendance", label: "Attendance Records", icon: "reports" as const },
   { href: "/admin/leave-requests", label: "Leave Requests", icon: "leave" as const },
   { href: "/admin/leave-types", label: "Leave Types", icon: "settings" as const },
   { href: "/admin/reports", label: "Reports", icon: "reports" as const },

@@ -7,6 +7,7 @@ const nav = [
   { href: "/manager/my-attendance", label: "My Attendance", icon: "attendance" as const },
   { href: "/manager/my-attendance/history", label: "My History", icon: "reports" as const },
   { href: "/manager/my-leave", label: "My Leave", icon: "leave" as const },
+  { href: "/manager/chat", label: "Chat", icon: "chat" as const },
   { href: "/manager/profile", label: "My Profile", icon: "users" as const },
   { href: "/manager/team", label: "Team", icon: "users" as const },
   { href: "/manager/attendance", label: "Team Attendance", icon: "attendance" as const },
