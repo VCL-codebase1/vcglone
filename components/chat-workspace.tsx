@@ -332,12 +332,12 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
 
   const draftKey = useCallback((conversationId: string) => `vcglone-chat-draft:${currentUser.id}:${conversationId}`, [currentUser.id]);
 
-  const selectConversation = useCallback((conversationId: string, messageId?: string) => {
+  const showConversation = useCallback((conversationId?: string, messageId?: string) => {
     if (selectedConversationId && messageBody.trim()) {
       window.localStorage.setItem(draftKey(selectedConversationId), messageBody);
     }
     setSelectedConversationId(conversationId);
-    setMessageBody(window.localStorage.getItem(draftKey(conversationId)) || "");
+    setMessageBody(conversationId ? window.localStorage.getItem(draftKey(conversationId)) || "" : "");
     setFiles([]);
     setReplyingTo(null);
     setEmojiOpen(false);
@@ -347,19 +347,39 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
     setHighlightedMessageId(messageId || null);
     nearBottomRef.current = true;
     previousMessageCountRef.current = 0;
-    const url = new URL(window.location.href);
-    url.searchParams.set("conversation", conversationId);
-    window.history.replaceState(null, "", url);
   }, [draftKey, messageBody, selectedConversationId]);
 
+  const selectConversation = useCallback((conversationId: string, messageId?: string) => {
+    const url = new URL(window.location.href);
+    const alreadySelectedInHistory = url.searchParams.get("conversation") === conversationId;
+    showConversation(conversationId, messageId);
+    if (alreadySelectedInHistory) return;
+    url.searchParams.set("conversation", conversationId);
+    const currentState = window.history.state && typeof window.history.state === "object" ? window.history.state : {};
+    window.history.pushState({ ...currentState, vcgloneChatConversation: conversationId }, "", url);
+  }, [showConversation]);
+
   function closeConversation() {
-    if (selectedConversationId && messageBody.trim()) window.localStorage.setItem(draftKey(selectedConversationId), messageBody);
-    setSelectedConversationId(undefined);
-    setDetailsOpen(false);
+    showConversation(undefined);
+    if (selectedConversationId && window.history.state?.vcgloneChatConversation === selectedConversationId) {
+      window.history.back();
+      return;
+    }
     const url = new URL(window.location.href);
     url.searchParams.delete("conversation");
-    window.history.replaceState(null, "", url);
+    const currentState = window.history.state && typeof window.history.state === "object" ? { ...window.history.state } : {};
+    delete currentState.vcgloneChatConversation;
+    window.history.replaceState(currentState, "", url);
   }
+
+  useEffect(() => {
+    const syncConversationFromHistory = () => {
+      const conversationId = new URLSearchParams(window.location.search).get("conversation");
+      showConversation(conversationId && conversations.some((conversation) => conversation.id === conversationId) ? conversationId : undefined);
+    };
+    window.addEventListener("popstate", syncConversationFromHistory);
+    return () => window.removeEventListener("popstate", syncConversationFromHistory);
+  }, [conversations, showConversation]);
 
   useEffect(() => {
     setConversationPreferences(Object.fromEntries(conversations.map((conversation) => [conversation.id, {
@@ -725,7 +745,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
   return (
     <>
     <section
-      className="relative -mx-3 -my-5 grid h-[calc(100dvh-4.75rem)] min-h-[420px] overflow-hidden border-y border-line bg-white shadow-[0_20px_60px_rgba(23,32,51,0.09)] dark:bg-panel sm:mx-0 sm:my-0 sm:h-[calc(100dvh-6.5rem)] sm:rounded-2xl sm:border md:h-[calc(100dvh-13rem)] md:min-h-[640px] md:max-h-[900px] lg:grid-cols-[minmax(300px,360px)_1fr]"
+      className="relative -mx-3 -my-5 grid h-[calc(100dvh_-_4.75rem_-_env(safe-area-inset-top))] min-h-0 overflow-hidden border-y border-line bg-white shadow-[0_20px_60px_rgba(23,32,51,0.09)] dark:bg-panel sm:mx-0 sm:my-0 sm:h-[calc(100dvh_-_6.5rem_-_env(safe-area-inset-top))] sm:rounded-2xl sm:border md:h-[calc(100dvh_-_13rem_-_env(safe-area-inset-top))] md:max-h-[900px] lg:h-[calc(100dvh-13rem)] lg:min-h-[640px] lg:grid-cols-[minmax(300px,360px)_1fr]"
       onDragEnter={(event) => { event.preventDefault(); setIsDraggingFiles(true); }}
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDraggingFiles(false); }}
@@ -741,7 +761,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
           <div className="relative mt-3"><Search className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted" aria-hidden /><Input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Search chats" className="rounded-full border-transparent bg-surface pl-10 shadow-none focus:border-brand/20 focus:bg-white dark:focus:bg-panel" /></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
             {(["ALL", "UNREAD", "DIRECT", "GROUPS", "ARCHIVED"] as const).map((filter) => (
-              <button key={filter} type="button" onClick={() => setConversationFilter(filter)} className={`focus-ring min-h-8 shrink-0 rounded-full px-3 text-xs font-semibold transition ${conversationFilter === filter ? "bg-brand text-white shadow-sm" : "bg-surface text-muted hover:bg-brandSoft hover:text-brand"}`}>{filter === "ALL" ? "All" : filter === "UNREAD" ? `Unread${totalUnread ? ` ${totalUnread}` : ""}` : filter === "DIRECT" ? "Direct" : filter === "GROUPS" ? "Groups" : "Archived"}</button>
+              <button key={filter} type="button" onClick={() => setConversationFilter(filter)} className={`focus-ring min-h-10 shrink-0 rounded-full px-3 text-xs font-semibold transition ${conversationFilter === filter ? "bg-brand text-white shadow-sm" : "bg-surface text-muted hover:bg-brandSoft hover:text-brand"}`}>{filter === "ALL" ? "All" : filter === "UNREAD" ? `Unread${totalUnread ? ` ${totalUnread}` : ""}` : filter === "DIRECT" ? "Direct" : filter === "GROUPS" ? "Groups" : "Archived"}</button>
             ))}
           </div>
         </div>
@@ -782,7 +802,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
                   {firstUnreadMessageId === message.id ? <div className="my-5 flex items-center gap-3" aria-label="Unread messages"><span className="h-px flex-1 bg-brand/30" /><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand">New messages</span><span className="h-px flex-1 bg-brand/30" /></div> : null}
                   <div id={`chat-message-${message.id}`} data-chat-message className={`group flex items-end gap-2 rounded-xl transition-colors ${highlightedMessageId === message.id ? "bg-amber-100/70 ring-4 ring-amber-100/70" : ""} ${message.mine ? "justify-end" : "justify-start"} ${grouped ? "mt-1" : "mt-3"}`}>
                     {!message.mine && selectedConversation.type === "GROUP" ? grouped ? <span className="w-8 shrink-0" /> : <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-brand shadow-sm ring-1 ring-line dark:bg-panel">{initials(message.sender.name)}</span> : null}
-                    <div className={`flex min-w-0 max-w-[84%] flex-col sm:max-w-[74%] lg:max-w-[68%] ${message.mine ? "items-end" : "items-start"}`}>
+                    <div className={`flex min-w-0 flex-col sm:max-w-[74%] lg:max-w-[68%] ${!message.mine && selectedConversation.type === "GROUP" ? "max-w-[70%]" : "max-w-[84%]"} ${message.mine ? "items-end" : "items-start"}`}>
                       {!message.mine && selectedConversation.type === "GROUP" && !grouped ? <p className="mb-1 px-1 text-[11px] font-semibold text-brand">{message.sender.name}</p> : null}
                       <div className="relative min-w-0">
                         <div className={`min-w-0 rounded-2xl px-3 py-2 shadow-sm sm:px-3.5 ${message.mine ? "rounded-br-md bg-[#dcecff] text-slate-900 dark:bg-[#193a68] dark:text-white" : "rounded-bl-md bg-white text-ink ring-1 ring-line/70 dark:bg-panel"}`}>
@@ -802,9 +822,9 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
                             {pendingMessage?.delivery === "sending" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /><span>Sending</span></> : pendingMessage?.delivery === "failed" ? <button type="button" onClick={() => retryPendingMessage(pendingMessage)} className="inline-flex items-center gap-1 font-semibold text-danger"><RotateCcw className="h-3 w-3" aria-hidden />Retry</button> : message.mine ? <CheckCheck className={`h-3.5 w-3.5 ${message.readBy.length ? "text-sky-600 dark:text-sky-300" : "text-slate-400"}`} aria-label={message.readBy.length ? `Seen by ${message.readBy.join(", ")}` : "Sent"} /> : null}
                           </div>
                         </div>
-                        {!pendingMessage ? <button type="button" onClick={(event) => openMessageActions(event, message)} className={`focus-ring absolute top-0 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-muted opacity-70 shadow-sm backdrop-blur transition hover:bg-white hover:text-brand sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 dark:bg-panel/80 ${message.mine ? "-left-9" : "-right-9"}`} aria-label="Message actions"><MoreHorizontal className="h-4 w-4" aria-hidden /></button> : null}
+                        {!pendingMessage ? <button type="button" onClick={(event) => openMessageActions(event, message)} className={`focus-ring absolute top-0 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-muted opacity-70 shadow-sm backdrop-blur transition hover:bg-white hover:text-brand sm:h-8 sm:w-8 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 dark:bg-panel/80 ${message.mine ? "-left-11 sm:-left-9" : "-right-11 sm:-right-9"}`} aria-label="Message actions"><MoreHorizontal className="h-4 w-4" aria-hidden /></button> : null}
                       </div>
-                      {message.reactions.length ? <div className={`relative z-10 -mt-1 flex flex-wrap gap-1 ${message.mine ? "justify-end pr-2" : "justify-start pl-2"}`}>{message.reactions.map((reaction) => <button key={reaction.emoji} type="button" title={reaction.names.join(", ")} onClick={() => toggleReaction(message.id, reaction.emoji)} className={`focus-ring min-h-7 rounded-full border px-2 text-[11px] shadow-sm transition hover:-translate-y-0.5 ${reaction.mine ? "border-amber-300 bg-amber-100 text-amber-900" : "border-line bg-white text-ink hover:bg-surface dark:bg-panel"}`}>{reaction.emoji} {reaction.count}</button>)}</div> : null}
+                      {message.reactions.length ? <div className={`relative z-10 -mt-1 flex flex-wrap gap-1 ${message.mine ? "justify-end pr-2" : "justify-start pl-2"}`}>{message.reactions.map((reaction) => <button key={reaction.emoji} type="button" title={reaction.names.join(", ")} onClick={() => toggleReaction(message.id, reaction.emoji)} className={`focus-ring min-h-10 rounded-full border px-2 text-[11px] shadow-sm transition hover:-translate-y-0.5 ${reaction.mine ? "border-amber-300 bg-amber-100 text-amber-900" : "border-line bg-white text-ink hover:bg-surface dark:bg-panel"}`}>{reaction.emoji} {reaction.count}</button>)}</div> : null}
                     </div>
                   </div>
                 </Fragment>;

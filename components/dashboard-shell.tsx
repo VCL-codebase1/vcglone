@@ -100,7 +100,7 @@ export async function DashboardShell({
           </Link>
         </div>
       </aside>
-      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/90 px-3 py-3 shadow-[0_8px_28px_rgba(23,32,51,0.05)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none sm:px-4 lg:hidden">
+      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/90 px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] shadow-[0_8px_28px_rgba(23,32,51,0.05)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none sm:px-4 lg:hidden">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <Link href="/" className="block">
