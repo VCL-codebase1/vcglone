@@ -8,6 +8,7 @@ import { createAuditLog } from "@/lib/audit";
 import { countWorkingDays, minutesBetween, todayDateOnly } from "@/lib/dates";
 import { createNotification, generalNotificationWhere } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { sendPushToUser } from "@/lib/push-notifications";
 import { canAdmin, canManageAccountRole, requireRole, requireUser } from "@/lib/rbac";
 import {
   approvalSchema,
@@ -24,6 +25,12 @@ import {
 } from "@/lib/validators";
 
 type ActionResult = { ok: true; message: string } | { ok: false; message: string };
+
+export type EmployeeCreateActionState = {
+  status: "idle" | "error";
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
 
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -436,8 +443,20 @@ export async function manuallyAdjustAttendance(formData: FormData) {
   revalidatePath(`/admin/attendance/${updated.id}`);
 }
 
-export async function createEmployee(formData: FormData) {
+export async function createEmployee(
+  _previousState: EmployeeCreateActionState,
+  formData: FormData
+): Promise<EmployeeCreateActionState> {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  let profileValues: ReturnType<typeof profileFormValues>;
+  try {
+    profileValues = profileFormValues(formData);
+  } catch {
+    return {
+      status: "error",
+      message: "Some profile details could not be read. Refresh the page and try again."
+    };
+  }
   const parsed = employeeCreateSchema.safeParse({
     employeeId: formString(formData, "employeeId"),
     firstName: formString(formData, "firstName"),
@@ -452,59 +471,151 @@ export async function createEmployee(formData: FormData) {
     employmentStatus: formString(formData, "employmentStatus"),
     jobTitle: formString(formData, "jobTitle"),
     dateJoined: formString(formData, "dateJoined"),
-    ...profileFormValues(formData)
+    ...profileValues
   });
-  if (!parsed.success) throw new Error(validationErrorMessage(parsed.error, "Invalid account details."));
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const field = String(issue.path[0] || "form");
+      fieldErrors[field] ||= issue.message;
+    }
+    return {
+      status: "error",
+      message: validationErrorMessage(parsed.error, "Review the highlighted account details."),
+      fieldErrors
+    };
+  }
   const values = parsed.data;
   if (!canManageAccountRole(actor.role, values.role)) {
-    throw new Error("You do not have permission to create an account with this role.");
+    return {
+      status: "error",
+      message: "You do not have permission to create an account with this role.",
+      fieldErrors: { role: "Choose a role within your access level." }
+    };
+  }
+
+  let duplicate: { email: string; employeeId: string | null } | null;
+  try {
+    duplicate = await prisma.user.findFirst({
+      where: { OR: [{ email: values.email }, { employeeId: values.employeeId }] },
+      select: { email: true, employeeId: true }
+    });
+  } catch (error) {
+    console.error("Employee account duplicate check failed", error);
+    return {
+      status: "error",
+      message: "The account could not be checked or created. No account details were saved. Please try again."
+    };
+  }
+  if (duplicate) {
+    const emailExists = duplicate.email === values.email;
+    return {
+      status: "error",
+      message: emailExists
+        ? "An account already uses this email address."
+        : "An account already uses this employee ID.",
+      fieldErrors: emailExists
+        ? { email: "Use a different email address." }
+        : { employeeId: "Use a different employee ID." }
+    };
   }
 
   const passwordHash = await hash(values.password, 12);
   const { password: _password, workExperiences, educationDetails, dependents, ...employeeData } = values;
-  const employee = await prisma.user.create({
-    data: {
-      ...employeeData,
-      passwordHash,
-      employeeId: values.employeeId,
-      departmentId: values.departmentId || null,
-      managerId: values.managerId || null,
-      secondaryManagerId: values.secondaryManagerId || null,
-      dateOfBirth: values.dateOfBirth || null,
-      gender: values.gender || null,
-      maritalStatus: values.maritalStatus || null,
-      workExperiences: { create: workExperiences },
-      educationDetails: { create: educationDetails },
-      dependents: { create: dependents }
-    }
-  });
+  let completionNotification: { id: string; title: string; message: string; href: string | null };
 
-  const everyoneConversation = await prisma.conversation.findUnique({ where: { slug: "everyone" }, select: { id: true } });
-  if (everyoneConversation) {
-    await prisma.conversationMember.create({ data: { conversationId: everyoneConversation.id, userId: employee.id } });
+  try {
+    const result = await prisma.$transaction(async (transaction) => {
+      const createdEmployee = await transaction.user.create({
+        data: {
+          ...employeeData,
+          passwordHash,
+          employeeId: values.employeeId,
+          departmentId: values.departmentId || null,
+          managerId: values.managerId || null,
+          secondaryManagerId: values.secondaryManagerId || null,
+          dateOfBirth: values.dateOfBirth || null,
+          gender: values.gender || null,
+          maritalStatus: values.maritalStatus || null,
+          workExperiences: { create: workExperiences },
+          educationDetails: { create: educationDetails },
+          dependents: { create: dependents }
+        }
+      });
+
+      const everyoneConversation = await transaction.conversation.findUnique({
+        where: { slug: "everyone" },
+        select: { id: true }
+      });
+      if (everyoneConversation) {
+        await transaction.conversationMember.create({
+          data: { conversationId: everyoneConversation.id, userId: createdEmployee.id }
+        });
+      }
+
+      const leaveTypes = await transaction.leaveType.findMany({ where: { active: true } });
+      await transaction.leaveBalance.createMany({
+        data: leaveTypes.map((type) => ({
+          employeeId: createdEmployee.id,
+          leaveTypeId: type.id,
+          year: new Date().getFullYear(),
+          entitlementDays: type.annualEntitlementDays,
+          usedDays: 0,
+          remainingDays: type.annualEntitlementDays
+        })),
+        skipDuplicates: true
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "EMPLOYEE_CREATED",
+          entityType: "User",
+          entityId: createdEmployee.id,
+          metadata: { email: createdEmployee.email, role: createdEmployee.role }
+        }
+      });
+
+      const notification = await transaction.notification.create({
+        data: {
+          userId: actor.id,
+          title: "Account created",
+          message: `${createdEmployee.firstName} ${createdEmployee.lastName}'s account was created successfully.`,
+          href: `/admin/employees/${createdEmployee.id}`
+        }
+      });
+
+      return notification;
+    });
+    completionNotification = result;
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return {
+        status: "error",
+        message: "An account already uses this email address or employee ID.",
+        fieldErrors: {
+          email: "Check whether this email is already registered.",
+          employeeId: "Check whether this employee ID is already registered."
+        }
+      };
+    }
+    console.error("Employee account creation failed", error);
+    return {
+      status: "error",
+      message: "The account could not be created. No account details were saved. Please try again."
+    };
   }
 
-  const leaveTypes = await prisma.leaveType.findMany({ where: { active: true } });
-  await prisma.leaveBalance.createMany({
-    data: leaveTypes.map((type) => ({
-      employeeId: employee.id,
-      leaveTypeId: type.id,
-      year: new Date().getFullYear(),
-      entitlementDays: type.annualEntitlementDays,
-      usedDays: 0,
-      remainingDays: type.annualEntitlementDays
-    })),
-    skipDuplicates: true
-  });
-
-  await createAuditLog({
-    actorId: actor.id,
-    action: "EMPLOYEE_CREATED",
-    entityType: "User",
-    entityId: employee.id,
-    metadata: { email: employee.email, role: employee.role }
-  });
-  await notifyActionCompleted(actor.id, "Account created", `${employee.firstName} ${employee.lastName}'s account was created successfully.`, `/admin/employees/${employee.id}`);
+  try {
+    await sendPushToUser(actor.id, {
+      id: completionNotification.id,
+      title: completionNotification.title,
+      message: completionNotification.message,
+      href: completionNotification.href
+    });
+  } catch (error) {
+    console.error("Account creation notification push failed", error);
+  }
   redirect("/admin/employees");
 }
 
