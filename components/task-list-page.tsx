@@ -18,12 +18,13 @@ export async function TaskListPage({
   const user = await requireUser();
   const now = new Date();
   let scopeWhere: Prisma.TaskWhereInput;
-  if (scope === "mine") scopeWhere = { assigneeId: user.id };
+  if (scope === "mine") scopeWhere = { OR: [{ assigneeId: user.id }, { steps: { some: { assigneeId: user.id } } }] };
   else if (scope === "team") {
     scopeWhere = {
       OR: [
         { assignedById: user.id },
-        { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } }
+        { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } },
+        { steps: { some: { OR: [{ targetManagerId: user.id }, { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } }] } } }
       ]
     };
   } else {
@@ -35,7 +36,7 @@ export async function TaskListPage({
   const priority = searchParams?.priority;
   const q = searchParams?.q?.trim();
   const departmentId = scope === "mine" ? undefined : searchParams?.departmentId;
-  const departmentWhere: Prisma.TaskWhereInput = departmentId ? { assignee: { departmentId } } : {};
+  const departmentWhere: Prisma.TaskWhereInput = departmentId ? { OR: [{ assignee: { departmentId } }, { steps: { some: { targetDepartmentId: departmentId } } }] } : {};
   const statusWhere: Prisma.TaskWhereInput = status === "OVERDUE"
       ? { dueAt: { lt: now }, status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CANCELLED] } }
       : status && Object.values(TaskStatus).includes(status as TaskStatus)
@@ -47,13 +48,13 @@ export async function TaskListPage({
       departmentWhere,
       statusWhere,
       priority && Object.values(TaskPriority).includes(priority as TaskPriority) ? { priority: priority as TaskPriority } : {},
-      q ? { OR: [{ taskCode: { contains: q, mode: "insensitive" } }, { name: { contains: q, mode: "insensitive" } }, { assignee: { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }] } }] } : {}
+      q ? { OR: [{ taskCode: { contains: q, mode: "insensitive" } }, { name: { contains: q, mode: "insensitive" } }, { assignee: { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }] } }, { steps: { some: { OR: [{ title: { contains: q, mode: "insensitive" } }, { assignee: { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }] } }] } } }] } : {}
     ]
   };
   const [tasks, metricTasks, departments] = await Promise.all([
     prisma.task.findMany({
       where: filterWhere,
-      include: { assignee: { select: { firstName: true, lastName: true } }, assignedBy: { select: { firstName: true, lastName: true } }, _count: { select: { comments: true, resources: true } } },
+      include: { assignee: { select: { firstName: true, lastName: true } }, assignedBy: { select: { firstName: true, lastName: true } }, steps: { where: scope === "mine" ? { assigneeId: user.id } : undefined, select: { id: true, status: true, interdepartmental: true } }, _count: { select: { comments: true, resources: true, steps: true } } },
       orderBy: [{ status: "asc" }, { dueAt: "asc" }],
       take: 250
     }),
@@ -112,12 +113,13 @@ export async function TaskListPage({
                 <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-brand">{task.taskCode}</p><h2 className="mt-1 break-words font-semibold text-ink">{task.name}</h2></div><StatusBadge value={overdueTask ? "OVERDUE" : task.status} /></div>
                 <div className="grid grid-cols-2 gap-3 rounded-xl bg-surface p-3 text-sm"><div><p className="text-xs text-muted">Assignee</p><p className="font-medium text-ink">{task.assignee.firstName} {task.assignee.lastName}</p></div><div><p className="text-xs text-muted">Deadline</p><p className={overdueTask ? "font-semibold text-amber-700" : "font-medium text-ink"}>{formatDateTime(task.dueAt)}</p></div></div>
                 <div className="flex items-center justify-between text-xs text-muted"><span>{task.priority} priority</span><span>{task._count.resources} resources · {task._count.comments} comments</span></div>
+                {task.steps.length && task.assigneeId !== user.id ? <p className="rounded-lg bg-brandSoft px-3 py-2 text-xs font-semibold text-brand">{task.steps.length} delegated step{task.steps.length === 1 ? "" : "s"} assigned to you</p> : null}
               </Card></Link>;
             })}
           </div>
           <div className="hidden md:block"><Table><thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Task</th><th className="px-4 py-3">Assignee</th><th className="px-4 py-3">Priority</th><th className="px-4 py-3">Deadline</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-line">{tasks.map((task) => {
             const overdueTask = isTaskOverdue(task, now);
-            return <tr key={task.id} className="transition hover:bg-surface/60"><td className="px-4 py-3"><Link href={taskHref(user.role, task.id)} className="font-semibold text-brand hover:underline">{task.name}</Link><p className="text-xs text-muted">{task.taskCode}</p></td><td className="px-4 py-3">{task.assignee.firstName} {task.assignee.lastName}</td><td className="px-4 py-3">{task.priority}</td><td className={overdueTask ? "px-4 py-3 font-semibold text-amber-700" : "px-4 py-3"}>{formatDateTime(task.dueAt)}</td><td className="px-4 py-3"><StatusBadge value={overdueTask ? "OVERDUE" : task.status} /></td></tr>;
+            return <tr key={task.id} className="transition hover:bg-surface/60"><td className="px-4 py-3"><Link href={taskHref(user.role, task.id)} className="font-semibold text-brand hover:underline">{task.name}</Link><p className="text-xs text-muted">{task.taskCode}</p>{task.steps.length && task.assigneeId !== user.id ? <p className="mt-1 text-xs font-semibold text-brand">{task.steps.length} delegated step{task.steps.length === 1 ? "" : "s"} for you</p> : null}</td><td className="px-4 py-3">{task.assignee.firstName} {task.assignee.lastName}</td><td className="px-4 py-3">{task.priority}</td><td className={overdueTask ? "px-4 py-3 font-semibold text-amber-700" : "px-4 py-3"}>{formatDateTime(task.dueAt)}</td><td className="px-4 py-3"><StatusBadge value={overdueTask ? "OVERDUE" : task.status} /></td></tr>;
           })}</tbody></Table></div>
         </>
       ) : <Card><EmptyState title="No tasks found" description={q || status || priority || departmentId ? "Try changing the filters." : "Tasks in this workspace will appear here."} /></Card>}

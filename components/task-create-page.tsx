@@ -1,6 +1,7 @@
 import { Role, TaskPriority } from "@prisma/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { TaskStepsBuilder } from "@/components/task-steps-builder";
 import { Card, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import { createTask } from "@/lib/task-actions";
 import { prisma } from "@/lib/prisma";
@@ -8,20 +9,28 @@ import { requireRole } from "@/lib/rbac";
 
 export async function TaskCreatePage() {
   const actor = await requireRole([Role.MANAGER, Role.HR_ADMIN, Role.SUPER_ADMIN]);
-  const assignees = await prisma.user.findMany({
-    where: {
-      employmentStatus: "ACTIVE",
-      role: { not: Role.SUPER_ADMIN },
-      ...(actor.role === Role.MANAGER ? { OR: [{ id: actor.id }, { managerId: actor.id }, { secondaryManagerId: actor.id }] } : {})
-    },
-    include: { department: { select: { name: true } } },
-    orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
-  });
+  const [assignees, people, departments] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        employmentStatus: "ACTIVE",
+        role: { not: Role.SUPER_ADMIN },
+        ...(actor.role === Role.MANAGER ? { OR: [{ id: actor.id }, { managerId: actor.id }, { secondaryManagerId: actor.id }] } : {})
+      },
+      include: { department: { select: { name: true } } },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
+    }),
+    prisma.user.findMany({
+      where: { employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN }, departmentId: { not: null } },
+      select: { id: true, firstName: true, lastName: true, departmentId: true },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
+    }),
+    prisma.department.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
+  ]);
   const backHref = actor.role === Role.MANAGER ? "/manager/tasks" : "/admin/tasks";
   const minDate = new Date(Date.now() + 15 * 60_000).toISOString().slice(0, 16);
 
   return <div className="space-y-5">
-    <PageHeader title="Delegate a task" description="Define ownership, a clear outcome, deadline, resources, and reminders before work begins." action={<Link href={backHref} className="inline-flex items-center gap-2 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back to tasks</Link>} />
+    <PageHeader title="Delegate a task" description="Assign the main work in seconds, then add only the steps that are genuinely needed." action={<Link href={backHref} className="inline-flex items-center gap-2 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back to tasks</Link>} />
     <form action={createTask} encType="multipart/form-data" className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
       <Card className="space-y-5">
         <div><h2 className="font-semibold text-ink">Task brief</h2><p className="text-sm text-muted">Make the work and definition of done unambiguous.</p></div>
@@ -34,6 +43,11 @@ export async function TaskCreatePage() {
           <Field label="Start date and time" hint="Optional"><Input type="datetime-local" name="startAt" min={minDate} /></Field>
           <Field label="Deadline"><Input type="datetime-local" name="dueAt" required min={minDate} /></Field>
         </div>
+        <TaskStepsBuilder
+          minDate={minDate}
+          departments={departments}
+          people={people.map((person) => ({ id: person.id, name: `${person.firstName} ${person.lastName}`, departmentId: person.departmentId }))}
+        />
       </Card>
       <div className="space-y-5">
         <Card className="space-y-4">

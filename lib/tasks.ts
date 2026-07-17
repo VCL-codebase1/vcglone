@@ -20,14 +20,21 @@ export function taskHref(role: Role | string, taskId: string) {
   return `/employee/tasks/${taskId}`;
 }
 
-export async function canAccessTask(user: { id: string; role: Role }, task: { assigneeId: string; assignedById: string }) {
+export async function canAccessTask(user: { id: string; role: Role }, task: { id: string; assigneeId: string; assignedById: string }) {
   if (user.role === Role.HR_ADMIN || user.role === Role.SUPER_ADMIN) return true;
   if (task.assigneeId === user.id || task.assignedById === user.id) return true;
-  if (user.role !== Role.MANAGER) return false;
-  return Boolean(await prisma.user.findFirst({
-    where: { id: task.assigneeId, OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] },
+  const delegatedAccess = await prisma.taskStep.findFirst({
+    where: {
+      taskId: task.id,
+      ...(user.role === Role.MANAGER
+        ? { OR: [{ assigneeId: user.id }, { targetManagerId: user.id }, { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } }] }
+        : { assigneeId: user.id })
+    },
     select: { id: true }
-  }));
+  });
+  if (delegatedAccess) return true;
+  if (user.role !== Role.MANAGER) return false;
+  return Boolean(await prisma.user.findFirst({ where: { id: task.assigneeId, OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] }, select: { id: true } }));
 }
 
 export async function canAssignTo(actor: { id: string; role: Role }, assigneeId: string) {
@@ -48,14 +55,14 @@ export function taskAudienceWhere(user: { id: string; role: Role }) {
       OR: [
         { assigneeId: user.id },
         { assignedById: user.id },
-        { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } }
+        { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } },
+        { steps: { some: { OR: [{ assigneeId: user.id }, { targetManagerId: user.id }, { assignee: { OR: [{ managerId: user.id }, { secondaryManagerId: user.id }] } }] } } }
       ]
     };
   }
-  return { assigneeId: user.id };
+  return { OR: [{ assigneeId: user.id }, { steps: { some: { assigneeId: user.id } } }] };
 }
 
 export function taskStatusLabel(status: TaskStatus | string) {
   return status.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
-

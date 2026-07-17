@@ -1,4 +1,4 @@
-import { Prisma, Role, TaskStatus } from "@prisma/client";
+import { Prisma, Role, TaskStatus, TaskStepStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type TaskReportPeriod = "daily" | "weekly" | "monthly";
@@ -12,6 +12,7 @@ export type TaskReportFilters = {
 };
 
 const OPEN_STATUSES = [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED, TaskStatus.IN_REVIEW, TaskStatus.CHANGES_REQUESTED];
+const OPEN_STEP_STATUSES = [TaskStepStatus.ASSIGNED, TaskStepStatus.IN_PROGRESS, TaskStepStatus.BLOCKED];
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
@@ -62,9 +63,9 @@ export function getTaskReportRange(periodInput?: string | null, dateInput?: stri
 export function taskReportScopeWhere(actor: TaskReportActor, filters: TaskReportFilters): Prisma.TaskWhereInput {
   const requestedScope = filters.scope;
   const base: Prisma.TaskWhereInput = requestedScope === "mine"
-    ? { assigneeId: actor.id }
+    ? { OR: [{ assigneeId: actor.id }, { steps: { some: { assigneeId: actor.id } } }] }
     : actor.role === Role.MANAGER && requestedScope === "team"
-      ? { OR: [{ assignedById: actor.id }, { assignee: { OR: [{ managerId: actor.id }, { secondaryManagerId: actor.id }] } }] }
+      ? { OR: [{ assignedById: actor.id }, { assignee: { OR: [{ managerId: actor.id }, { secondaryManagerId: actor.id }] } }, { steps: { some: { OR: [{ targetManagerId: actor.id }, { assignee: { OR: [{ managerId: actor.id }, { secondaryManagerId: actor.id }] } }] } } }] }
       : actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN
         ? {}
         : { assigneeId: actor.id };
@@ -73,6 +74,24 @@ export function taskReportScopeWhere(actor: TaskReportActor, filters: TaskReport
       base,
       actor.role !== Role.EMPLOYEE && filters.employeeId ? { assigneeId: filters.employeeId } : {},
       actor.role !== Role.EMPLOYEE && filters.departmentId ? { assignee: { departmentId: filters.departmentId } } : {}
+    ]
+  };
+}
+
+export function taskStepReportScopeWhere(actor: TaskReportActor, filters: TaskReportFilters): Prisma.TaskStepWhereInput {
+  const base: Prisma.TaskStepWhereInput = filters.scope === "mine"
+    ? { assigneeId: actor.id }
+    : actor.role === Role.MANAGER && filters.scope === "team"
+      ? { OR: [{ assignedById: actor.id }, { targetManagerId: actor.id }, { assignee: { OR: [{ managerId: actor.id }, { secondaryManagerId: actor.id }] } }] }
+      : actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN
+        ? {}
+        : { assigneeId: actor.id };
+  return {
+    AND: [
+      base,
+      { interdepartmental: true },
+      actor.role !== Role.EMPLOYEE && filters.employeeId ? { assigneeId: filters.employeeId } : {},
+      actor.role !== Role.EMPLOYEE && filters.departmentId ? { targetDepartmentId: filters.departmentId } : {}
     ]
   };
 }
@@ -123,6 +142,32 @@ export async function getTaskReportData(actor: TaskReportActor, filters: TaskRep
       assignedBy: { select: { firstName: true, lastName: true } }
     },
     orderBy: [{ dueAt: "asc" }],
+    take: 5000
+  });
+  const delegatedSteps = await prisma.taskStep.findMany({
+    where: {
+      AND: [
+        taskStepReportScopeWhere(actor, filters),
+        { createdAt: { lt: range.end } },
+        {
+          OR: [
+            { createdAt: { gte: range.start, lt: range.end } },
+            { dueAt: { gte: range.start, lt: range.end } },
+            { completedAt: { gte: range.start, lt: range.end } },
+            { status: { in: OPEN_STEP_STATUSES } }
+          ]
+        }
+      ]
+    },
+    include: {
+      task: { select: { id: true, taskCode: true, name: true } },
+      assignee: { select: { id: true, firstName: true, lastName: true, employeeId: true } },
+      assignedBy: { select: { firstName: true, lastName: true } },
+      sourceDepartment: { select: { id: true, name: true } },
+      targetDepartment: { select: { id: true, name: true } },
+      targetManager: { select: { firstName: true, lastName: true } }
+    },
+    orderBy: [{ status: "asc" }, { dueAt: "asc" }],
     take: 5000
   });
   const inRange = (date: Date | null) => Boolean(date && date >= range.start && date < range.end);
@@ -180,6 +225,14 @@ export async function getTaskReportData(actor: TaskReportActor, filters: TaskRep
       : 0
   })).sort((a, b) => b.completed - a.completed || a.name.localeCompare(b.name));
 
+  const completedDelegations = delegatedSteps.filter((step) => inRange(step.completedAt));
+  const dueDelegations = delegatedSteps.filter((step) => step.dueAt >= range.start && step.dueAt < range.end && step.status !== TaskStepStatus.CANCELLED);
+  const overdueDelegations = delegatedSteps.filter((step) => step.dueAt < now && OPEN_STEP_STATUSES.includes(step.status as (typeof OPEN_STEP_STATUSES)[number]));
+  const startedDelegations = delegatedSteps.filter((step) => step.startedAt);
+  const responseHours = startedDelegations.map((step) => Math.max(0, ((step.startedAt as Date).getTime() - step.createdAt.getTime()) / HOUR));
+  const delegationHours = completedDelegations.map((step) => Math.max(0, ((step.completedAt as Date).getTime() - (step.startedAt || step.createdAt).getTime()) / HOUR));
+  const onTimeDelegations = completedDelegations.filter((step) => step.completedAt && step.completedAt <= step.dueAt);
+
   return {
     range,
     metrics: {
@@ -195,6 +248,18 @@ export async function getTaskReportData(actor: TaskReportActor, filters: TaskRep
     statusData,
     people,
     departments: departmentRows,
-    tasks
+    tasks,
+    delegatedSteps,
+    delegationMetrics: {
+      total: delegatedSteps.length,
+      active: delegatedSteps.filter((step) => step.status === TaskStepStatus.ASSIGNED || step.status === TaskStepStatus.IN_PROGRESS).length,
+      blocked: delegatedSteps.filter((step) => step.status === TaskStepStatus.BLOCKED).length,
+      overdue: overdueDelegations.length,
+      completed: completedDelegations.length,
+      completionRate: dueDelegations.length ? Math.round((dueDelegations.filter((step) => step.completedAt && step.completedAt < range.end).length / dueDelegations.length) * 100) : 0,
+      onTimeRate: completedDelegations.length ? Math.round((onTimeDelegations.length / completedDelegations.length) * 100) : 0,
+      averageResponseHours: Math.round(average(responseHours) * 10) / 10,
+      averageCompletionHours: Math.round(average(delegationHours) * 10) / 10
+    }
   };
 }

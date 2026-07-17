@@ -1,12 +1,12 @@
-import { Role, TaskStatus } from "@prisma/client";
-import { ArrowLeft, CalendarClock, File, Link as LinkIcon, MessageSquare, Paperclip, UserRound } from "lucide-react";
+import { Role, TaskStatus, TaskStepStatus } from "@prisma/client";
+import { ArrowLeft, CalendarClock, CheckCircle2, File, Link as LinkIcon, ListChecks, MessageSquare, Paperclip, UserRound } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Textarea } from "@/components/ui";
 import { formatDateTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/rbac";
-import { addTaskComment, addTaskResource, approveTask, blockTask, cancelTask, requestTaskChanges, resumeTask, startTask, submitTaskForReview, updateTask } from "@/lib/task-actions";
+import { addTaskComment, addTaskResource, approveTask, blockTask, blockTaskStep, cancelTask, completeTaskStep, reassignTaskStep, requestTaskChanges, resumeTask, resumeTaskStep, startTask, startTaskStep, submitTaskForReview, updateTask } from "@/lib/task-actions";
 import { canAccessTask, isTaskOverdue } from "@/lib/tasks";
 
 function datetimeLocal(date: Date) {
@@ -22,7 +22,15 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
       assignedBy: true,
       resources: { include: { uploader: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } },
       comments: { include: { author: { select: { firstName: true, lastName: true, role: true } } }, orderBy: { createdAt: "asc" } },
-      activities: { include: { actor: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" }, take: 50 }
+      activities: { include: { actor: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" }, take: 50 },
+      steps: {
+        include: {
+          assignee: { select: { id: true, firstName: true, lastName: true } },
+          sourceDepartment: { select: { id: true, name: true } },
+          targetDepartment: { select: { id: true, name: true } }
+        },
+        orderBy: { position: "asc" }
+      }
     }
   });
   if (!task || !(await canAccessTask(actor, task))) notFound();
@@ -30,10 +38,18 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
   const closed = task.status === TaskStatus.COMPLETED || task.status === TaskStatus.CANCELLED;
   const isAssignee = task.assigneeId === actor.id;
   const reviewer = actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN || task.assignedById === actor.id || (actor.role === Role.MANAGER && (task.assignee.managerId === actor.id || task.assignee.secondaryManagerId === actor.id));
+  const completedSteps = task.steps.filter((step) => step.status === TaskStepStatus.COMPLETED).length;
+  const incompleteRequiredSteps = task.steps.filter((step) => step.required && step.status !== TaskStepStatus.COMPLETED).length;
   const backHref = actor.role === Role.EMPLOYEE ? "/employee/tasks" : actor.role === Role.MANAGER ? "/manager/tasks" : "/admin/tasks";
   const assignees = reviewer && !closed ? await prisma.user.findMany({
     where: { employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN }, ...(actor.role === Role.MANAGER ? { OR: [{ id: actor.id }, { managerId: actor.id }, { secondaryManagerId: actor.id }] } : {}) },
     select: { id: true, firstName: true, lastName: true }, orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
+  }) : [];
+  const reassignableDepartmentIds = Array.from(new Set(task.steps.filter((step) => !closed && step.status !== TaskStepStatus.COMPLETED && step.status !== TaskStepStatus.CANCELLED && (actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN || step.assignedById === actor.id || step.targetManagerId === actor.id)).map((step) => step.targetDepartmentId).filter((id): id is string => Boolean(id))));
+  const stepAssignees = reassignableDepartmentIds.length ? await prisma.user.findMany({
+    where: { employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN }, departmentId: { in: reassignableDepartmentIds } },
+    select: { id: true, firstName: true, lastName: true, departmentId: true },
+    orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
   }) : [];
 
   return <div className="space-y-5">
@@ -52,13 +68,41 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
           {task.reviewComment ? <section className="rounded-xl border border-line p-4"><h2 className="font-semibold text-ink">Latest review note</h2><p className="mt-1 whitespace-pre-wrap text-sm text-muted">{task.reviewComment}</p></section> : null}
         </Card>
 
+        {task.steps.length ? <Card className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2"><ListChecks className="h-5 w-5 text-brand" /><div><h2 className="font-semibold text-ink">Task steps</h2><p className="text-sm text-muted">{completedSteps} of {task.steps.length} completed{incompleteRequiredSteps ? ` · ${incompleteRequiredSteps} required remaining` : ""}</p></div></div>
+            <div className="h-2 w-36 overflow-hidden rounded-full bg-surface" aria-label={`${completedSteps} of ${task.steps.length} steps complete`}><div className="h-full rounded-full bg-brand" style={{ width: `${Math.round((completedSteps / task.steps.length) * 100)}%` }} /></div>
+          </div>
+          <div className="space-y-3">{task.steps.map((step) => {
+            const stepOverdue = step.dueAt < new Date() && step.status !== TaskStepStatus.COMPLETED && step.status !== TaskStepStatus.CANCELLED;
+            const isStepAssignee = step.assigneeId === actor.id;
+            const canReassignStep = !closed && step.status !== TaskStepStatus.COMPLETED && step.status !== TaskStepStatus.CANCELLED && (actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN || step.assignedById === actor.id || step.targetManagerId === actor.id);
+            const replacementPeople = stepAssignees.filter((person) => person.departmentId === step.targetDepartmentId);
+            return <section key={step.id} className="rounded-xl border border-line p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-brandSoft text-xs font-semibold text-brand">{step.position}</span><h3 className="font-semibold text-ink">{step.title}</h3>{step.interdepartmental ? <span className="rounded-full bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-800">Interdepartmental</span> : null}{!step.required ? <span className="text-xs text-muted">Optional</span> : null}</div>{step.description ? <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{step.description}</p> : null}</div>
+                <StatusBadge value={stepOverdue ? "OVERDUE" : step.status} />
+              </div>
+              <div className="mt-3 grid gap-2 rounded-lg bg-surface p-3 text-sm sm:grid-cols-3"><div><p className="text-xs text-muted">Assigned to</p><p className="font-medium text-ink">{step.assignee.firstName} {step.assignee.lastName}</p></div><div><p className="text-xs text-muted">Department</p><p className="font-medium text-ink">{step.targetDepartment?.name || "Unassigned"}</p>{step.interdepartmental ? <p className="text-xs text-muted">From {step.sourceDepartment?.name || "another department"}</p> : null}</div><div><p className="text-xs text-muted">Deadline</p><p className={stepOverdue ? "font-semibold text-amber-700" : "font-medium text-ink"}>{formatDateTime(step.dueAt)}</p></div></div>
+              {step.blockedReason ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-200"><strong>Blocked:</strong> {step.blockedReason}</p> : null}
+              {step.completionNote ? <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"><strong>Completion note:</strong> {step.completionNote}</p> : null}
+              {isStepAssignee && !closed && step.status !== TaskStepStatus.COMPLETED && step.status !== TaskStepStatus.CANCELLED ? <div className="mt-3 space-y-3 border-t border-line pt-3">
+                <div className="flex flex-wrap gap-2">{step.status === TaskStepStatus.ASSIGNED ? <form action={startTaskStep}><input type="hidden" name="stepId" value={step.id} /><Button>Start step</Button></form> : null}{step.status === TaskStepStatus.BLOCKED ? <form action={resumeTaskStep}><input type="hidden" name="stepId" value={step.id} /><Button>Resume step</Button></form> : null}</div>
+                {step.status === TaskStepStatus.ASSIGNED || step.status === TaskStepStatus.IN_PROGRESS ? <form action={blockTaskStep} className="grid gap-2 sm:grid-cols-[1fr_auto]"><input type="hidden" name="stepId" value={step.id} /><Input name="reason" required placeholder="What is blocking this step?" /><Button variant="secondary">Raise blocker</Button></form> : null}
+                {step.status === TaskStepStatus.IN_PROGRESS ? <form action={completeTaskStep} className="grid gap-2 sm:grid-cols-[1fr_auto]"><input type="hidden" name="stepId" value={step.id} /><Input name="note" placeholder="Completion note (optional)" /><Button><CheckCircle2 className="h-4 w-4" />Complete step</Button></form> : null}
+              </div> : null}
+              {canReassignStep && replacementPeople.length ? <form action={reassignTaskStep} className="mt-3 flex flex-col gap-2 border-t border-line pt-3 sm:flex-row"><input type="hidden" name="stepId" value={step.id} /><Select name="assigneeId" defaultValue={step.assigneeId} aria-label={`Reassign ${step.title}`}>{replacementPeople.map((person) => <option key={person.id} value={person.id}>{person.firstName} {person.lastName}</option>)}</Select><Button variant="secondary" className="shrink-0">Reassign</Button></form> : null}
+            </section>;
+          })}</div>
+        </Card> : null}
+
         {isAssignee && !closed ? <Card className="space-y-4"><div><h2 className="font-semibold text-ink">Update your work</h2><p className="text-sm text-muted">Keep the manager informed and submit only when the work is ready for review.</p></div>
           <div className="flex flex-wrap gap-2">
             {task.status === TaskStatus.ASSIGNED || task.status === TaskStatus.CHANGES_REQUESTED ? <form action={startTask}><input type="hidden" name="taskId" value={task.id} /><Button>Start work</Button></form> : null}
             {task.status === TaskStatus.BLOCKED ? <form action={resumeTask}><input type="hidden" name="taskId" value={task.id} /><Button>Resume work</Button></form> : null}
           </div>
           {task.status === TaskStatus.ASSIGNED || task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? <form action={blockTask} className="grid gap-3 sm:grid-cols-[1fr_auto]"><input type="hidden" name="taskId" value={task.id} /><Input name="reason" required placeholder="What is blocking progress?" /><Button variant="secondary">Raise blocker</Button></form> : null}
-          {task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? <form action={submitTaskForReview} className="space-y-3"><input type="hidden" name="taskId" value={task.id} /><Field label="Completion note" hint="Summarize what was completed and where the result can be found."><Textarea name="note" rows={3} placeholder="Work completed, validation performed, and result attached…" /></Field><Button>Submit for review</Button></form> : null}
+          {task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? incompleteRequiredSteps ? <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Complete the remaining {incompleteRequiredSteps} required task step{incompleteRequiredSteps === 1 ? "" : "s"} before submitting the main task.</p> : <form action={submitTaskForReview} className="space-y-3"><input type="hidden" name="taskId" value={task.id} /><Field label="Completion note" hint="Summarize what was completed and where the result can be found."><Textarea name="note" rows={3} placeholder="Work completed, validation performed, and result attached…" /></Field><Button>Submit for review</Button></form> : null}
           {task.status === TaskStatus.IN_REVIEW ? <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Your completion is waiting for manager review.</p> : null}
         </Card> : null}
 
