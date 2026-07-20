@@ -8,18 +8,19 @@ import { z } from "zod";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification, createNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { sendPushToUser } from "@/lib/push-notifications";
 import { requireRole, requireUser } from "@/lib/rbac";
 import { canAccessTask, canAssignTo, taskHref } from "@/lib/tasks";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const createSchema = z.object({
-  name: z.string().trim().min(3).max(160),
-  description: z.string().trim().min(5).max(10000),
-  expectedOutcome: z.string().trim().max(5000).optional(),
-  assigneeId: z.string().min(1),
+  name: z.string({ required_error: "Enter a task name." }).trim().min(3, "Use at least 3 characters for the task name.").max(160, "Keep the task name under 160 characters."),
+  description: z.string({ required_error: "Enter a task description." }).trim().min(5, "Add a little more detail to the task description.").max(10000, "Keep the description under 10,000 characters."),
+  expectedOutcome: z.string().trim().max(5000, "Keep the expected outcome under 5,000 characters.").optional(),
+  assigneeId: z.string({ required_error: "Choose a team member." }).min(1, "Choose a team member."),
   priority: z.nativeEnum(TaskPriority),
   startAt: z.date().optional(),
-  dueAt: z.date(),
+  dueAt: z.date({ required_error: "Choose a deadline.", invalid_type_error: "Choose a valid deadline." }),
   reminderOffsets: z.array(z.number().int().min(0).max(43200)).max(6)
 });
 
@@ -33,6 +34,16 @@ const draftStepSchema = z.object({
 });
 
 const draftStepsSchema = z.array(draftStepSchema).max(30);
+
+export type TaskCreateActionState = {
+  status: "idle" | "error";
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+function taskCreateError(message: string, fieldErrors?: Record<string, string>): TaskCreateActionState {
+  return { status: "error", message, fieldErrors };
+}
 
 function value(formData: FormData, key: string) {
   const entry = formData.get(key);
@@ -147,121 +158,195 @@ async function resourceCreates(formData: FormData, uploaderId: string) {
   return resources;
 }
 
-export async function createTask(formData: FormData) {
+export async function createTask(
+  _previousState: TaskCreateActionState,
+  formData: FormData
+): Promise<TaskCreateActionState> {
   const actor = await requireRole([Role.MANAGER, Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const reminderOffsets = formData.getAll("reminderOffsets").map(Number).filter(Number.isFinite);
-  const parsed = createSchema.parse({
+  let startAt: Date | undefined;
+  let dueAt: Date | undefined;
+  try {
+    startAt = localDateTime(value(formData, "startAt"));
+    dueAt = localDateTime(value(formData, "dueAt"));
+  } catch {
+    return taskCreateError("Enter a valid start time and deadline.", { dueAt: "Check the selected date and time." });
+  }
+  const result = createSchema.safeParse({
     name: value(formData, "name"),
     description: value(formData, "description"),
     expectedOutcome: value(formData, "expectedOutcome"),
     assigneeId: value(formData, "assigneeId"),
     priority: value(formData, "priority") || TaskPriority.MEDIUM,
-    startAt: localDateTime(value(formData, "startAt")),
-    dueAt: localDateTime(value(formData, "dueAt")),
+    startAt,
+    dueAt,
     reminderOffsets: reminderOffsets.length ? reminderOffsets : [1440, 120, 0]
   });
-  if (!(await canAssignTo(actor, parsed.assigneeId))) throw new Error("You can only assign tasks to active team members within your access.");
-  if (parsed.dueAt <= new Date()) throw new Error("The deadline must be in the future.");
-  if (parsed.startAt && parsed.startAt > parsed.dueAt) throw new Error("Start time must be before the deadline.");
+  if (!result.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const field = String(issue.path[0] || "form");
+      fieldErrors[field] ||= issue.message;
+    }
+    return taskCreateError("Review the highlighted task details and try again.", fieldErrors);
+  }
+  const parsed = result.data;
+  try {
+    if (!(await canAssignTo(actor, parsed.assigneeId))) {
+      return taskCreateError("Choose an active team member you are allowed to assign work to.", { assigneeId: "Select one of your active team members." });
+    }
+  } catch (error) {
+    console.error("Task assignee check failed", error);
+    return taskCreateError("We could not verify the assignee. No task was created. Please try again.");
+  }
+  if (parsed.dueAt <= new Date()) return taskCreateError("The deadline must be in the future.", { dueAt: "Choose a future date and time." });
+  if (parsed.startAt && parsed.startAt > parsed.dueAt) return taskCreateError("The start time must be before the deadline.", { startAt: "Choose a time before the deadline." });
   let draftSteps: z.infer<typeof draftStepsSchema> = [];
   try {
     draftSteps = draftStepsSchema.parse(JSON.parse(value(formData, "taskSteps") || "[]"));
   } catch {
-    throw new Error("Review the task steps and make sure every delegated step has a department and employee.");
+    return taskCreateError("Review the task steps and make sure every delegated step has a department and employee.", { taskSteps: "Complete or remove each unfinished step." });
   }
   const selectedIds = Array.from(new Set([parsed.assigneeId, ...draftSteps.filter((step) => step.assigneeId !== "MAIN").map((step) => step.assigneeId)]));
-  const selectedPeople = await prisma.user.findMany({
-    where: { id: { in: selectedIds }, employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN } },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      departmentId: true,
-      managerId: true,
-      secondaryManagerId: true,
-      department: { select: { managerId: true } }
-    }
-  });
-  if (selectedPeople.length !== selectedIds.length) throw new Error("One or more selected step assignees are no longer available.");
+  let selectedPeople: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: Role;
+    departmentId: string | null;
+    managerId: string | null;
+    secondaryManagerId: string | null;
+    department: { managerId: string | null } | null;
+  }>;
+  try {
+    selectedPeople = await prisma.user.findMany({
+      where: { id: { in: selectedIds }, employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        departmentId: true,
+        managerId: true,
+        secondaryManagerId: true,
+        department: { select: { managerId: true } }
+      }
+    });
+  } catch (error) {
+    console.error("Task assignee loading failed", error);
+    return taskCreateError("We could not load the selected employees. No task was created. Please try again.");
+  }
+  if (selectedPeople.length !== selectedIds.length) return taskCreateError("One or more selected employees are no longer available.", { taskSteps: "Review the task and step assignees." });
   const peopleById = new Map(selectedPeople.map((person) => [person.id, person]));
   const mainAssignee = peopleById.get(parsed.assigneeId);
-  if (!mainAssignee) throw new Error("The main task assignee is no longer available.");
+  if (!mainAssignee) return taskCreateError("The main task assignee is no longer available.", { assigneeId: "Choose another team member." });
   const sourceDepartmentId = actor.departmentId || null;
-  const steps: Prisma.TaskStepUncheckedCreateWithoutTaskInput[] = draftSteps.map((step, index) => {
-    const assigneeId = step.assigneeId === "MAIN" ? parsed.assigneeId : step.assigneeId;
-    const assignee = peopleById.get(assigneeId);
-    if (!assignee) throw new Error(`Choose an active employee for step ${index + 1}.`);
-    if (step.departmentId !== "MAIN" && assignee.departmentId !== step.departmentId) throw new Error(`The employee selected for step ${index + 1} is not in the selected department.`);
-    const targetDepartmentId = assignee.departmentId;
-    const dueAt = localDateTime(step.dueAt) || parsed.dueAt;
-    if (dueAt <= new Date()) throw new Error(`The deadline for step ${index + 1} must be in the future.`);
-    if (dueAt > parsed.dueAt) throw new Error(`The deadline for step ${index + 1} cannot be later than the main task deadline.`);
-    const interdepartmental = Boolean(sourceDepartmentId && targetDepartmentId && sourceDepartmentId !== targetDepartmentId);
-    return {
-      title: step.title,
-      description: step.description || null,
-      position: index + 1,
-      required: step.required,
-      assigneeId,
-      assignedById: actor.id,
-      sourceDepartmentId,
-      targetDepartmentId,
-      targetManagerId: interdepartmental ? assignee.department?.managerId || assignee.managerId || assignee.secondaryManagerId || null : null,
-      interdepartmental,
-      dueAt
-    };
-  });
-  const resources = await resourceCreates(formData, actor.id);
-  const task = await prisma.task.create({
-    data: {
-      taskCode: taskCode(),
-      name: parsed.name,
-      description: parsed.description,
-      expectedOutcome: parsed.expectedOutcome,
-      assigneeId: parsed.assigneeId,
-      assignedById: actor.id,
-      priority: parsed.priority,
-      startAt: parsed.startAt,
-      dueAt: parsed.dueAt,
-      reminderOffsets: parsed.reminderOffsets,
-      resources: { create: resources },
-      steps: { create: steps },
-      activities: { create: { actorId: actor.id, action: "CREATED", message: steps.length ? `Task created and assigned with ${steps.length} step${steps.length === 1 ? "" : "s"}.` : "Task created and assigned." } }
-    },
-    include: { assignee: { select: { firstName: true, lastName: true, role: true } }, steps: true }
-  });
-  const notificationMap = new Map<string, { userId: string; title: string; message: string; href: string }>();
-  notificationMap.set(task.assigneeId, {
-      userId: task.assigneeId,
-      title: "New task assigned",
-      message: `${task.taskCode}: ${task.name}`,
-      href: taskHref(task.assignee.role, task.id)
-  });
-  for (const step of task.steps) {
-    if (step.assigneeId !== task.assigneeId) {
-      const assignee = peopleById.get(step.assigneeId);
-      if (assignee) notificationMap.set(step.assigneeId, {
-        userId: step.assigneeId,
-        title: step.interdepartmental ? "Interdepartmental task step assigned" : "Task step assigned",
-        message: `${task.taskCode}: ${step.title}`,
-        href: taskHref(assignee.role, task.id)
-      });
-    }
-    if (step.interdepartmental && step.targetManagerId && step.targetManagerId !== actor.id && step.targetManagerId !== step.assigneeId) {
-      const manager = peopleById.get(step.targetManagerId) || await prisma.user.findUnique({ where: { id: step.targetManagerId }, select: { role: true } });
-      if (manager) notificationMap.set(step.targetManagerId, {
-        userId: step.targetManagerId,
-        title: "Interdepartmental work assigned to your team",
-        message: `${task.taskCode}: ${step.title}`,
-        href: taskHref(manager.role, task.id)
-      });
-    }
+  let steps: Prisma.TaskStepUncheckedCreateWithoutTaskInput[];
+  try {
+    steps = draftSteps.map((step, index) => {
+      const assigneeId = step.assigneeId === "MAIN" ? parsed.assigneeId : step.assigneeId;
+      const assignee = peopleById.get(assigneeId);
+      if (!assignee) throw new Error(`Choose an active employee for step ${index + 1}.`);
+      if (step.departmentId !== "MAIN" && assignee.departmentId !== step.departmentId) throw new Error(`The employee selected for step ${index + 1} is not in the selected department.`);
+      const targetDepartmentId = assignee.departmentId;
+      const stepDueAt = localDateTime(step.dueAt) || parsed.dueAt;
+      if (stepDueAt <= new Date()) throw new Error(`The deadline for step ${index + 1} must be in the future.`);
+      if (stepDueAt > parsed.dueAt) throw new Error(`The deadline for step ${index + 1} cannot be later than the main task deadline.`);
+      const interdepartmental = Boolean(sourceDepartmentId && targetDepartmentId && sourceDepartmentId !== targetDepartmentId);
+      return {
+        title: step.title,
+        description: step.description || null,
+        position: index + 1,
+        required: step.required,
+        assigneeId,
+        assignedById: actor.id,
+        sourceDepartmentId,
+        targetDepartmentId,
+        targetManagerId: interdepartmental ? assignee.department?.managerId || assignee.managerId || assignee.secondaryManagerId || null : null,
+        interdepartmental,
+        dueAt: stepDueAt
+      };
+    });
+  } catch (error) {
+    return taskCreateError((error as Error).message, { taskSteps: "Review the step assignees and deadlines." });
   }
-  await Promise.all([
-    createNotifications(Array.from(notificationMap.values())),
-    createAuditLog({ actorId: actor.id, action: "TASK_CREATED", entityType: "Task", entityId: task.id, metadata: { taskCode: task.taskCode, assigneeId: task.assigneeId } })
-  ]);
+  let resources: Prisma.TaskResourceUncheckedCreateWithoutTaskInput[];
+  try {
+    resources = await resourceCreates(formData, actor.id);
+  } catch (error) {
+    return taskCreateError((error as Error).message, { resources: "Review the links and attached files." });
+  }
+
+  let task: { id: string; taskCode: string; assigneeId: string };
+  let notificationInputs: Array<{ userId: string; title: string; message: string; href: string }>;
+  try {
+    const creation = await prisma.$transaction(async (transaction) => {
+      const createdTask = await transaction.task.create({
+        data: {
+          taskCode: taskCode(),
+          name: parsed.name,
+          description: parsed.description,
+          expectedOutcome: parsed.expectedOutcome,
+          assigneeId: parsed.assigneeId,
+          assignedById: actor.id,
+          priority: parsed.priority,
+          startAt: parsed.startAt,
+          dueAt: parsed.dueAt,
+          reminderOffsets: parsed.reminderOffsets,
+          resources: { create: resources },
+          steps: { create: steps },
+          activities: { create: { actorId: actor.id, action: "CREATED", message: steps.length ? `Task created and assigned with ${steps.length} step${steps.length === 1 ? "" : "s"}.` : "Task created and assigned." } }
+        },
+        include: { assignee: { select: { role: true } }, steps: true }
+      });
+      const notificationMap = new Map<string, { userId: string; title: string; message: string; href: string }>();
+      notificationMap.set(createdTask.assigneeId, {
+        userId: createdTask.assigneeId,
+        title: "New task assigned",
+        message: `${createdTask.taskCode}: ${createdTask.name}`,
+        href: taskHref(createdTask.assignee.role, createdTask.id)
+      });
+      for (const step of createdTask.steps) {
+        if (step.assigneeId !== createdTask.assigneeId) {
+          const assignee = peopleById.get(step.assigneeId);
+          if (assignee) notificationMap.set(step.assigneeId, {
+            userId: step.assigneeId,
+            title: step.interdepartmental ? "Interdepartmental task step assigned" : "Task step assigned",
+            message: `${createdTask.taskCode}: ${step.title}`,
+            href: taskHref(assignee.role, createdTask.id)
+          });
+        }
+        if (step.interdepartmental && step.targetManagerId && step.targetManagerId !== actor.id && step.targetManagerId !== step.assigneeId) {
+          const manager = peopleById.get(step.targetManagerId) || await transaction.user.findUnique({ where: { id: step.targetManagerId }, select: { role: true } });
+          if (manager) notificationMap.set(step.targetManagerId, {
+            userId: step.targetManagerId,
+            title: "Interdepartmental work assigned to your team",
+            message: `${createdTask.taskCode}: ${step.title}`,
+            href: taskHref(manager.role, createdTask.id)
+          });
+        }
+      }
+      const notifications = Array.from(notificationMap.values());
+      await transaction.notification.createMany({ data: notifications });
+      await transaction.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "TASK_CREATED",
+          entityType: "Task",
+          entityId: createdTask.id,
+          metadata: { taskCode: createdTask.taskCode, assigneeId: createdTask.assigneeId }
+        }
+      });
+      return { task: createdTask, notifications };
+    });
+    task = creation.task;
+    notificationInputs = creation.notifications;
+  } catch (error) {
+    console.error("Task creation failed", error);
+    return taskCreateError("The task could not be created. Nothing was saved. Please try again.");
+  }
+
+  await Promise.allSettled(notificationInputs.map((notification) => sendPushToUser(notification.userId, notification)));
   revalidateTask(task.id);
   redirect(taskHref(actor.role, task.id));
 }
