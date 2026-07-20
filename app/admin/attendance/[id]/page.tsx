@@ -44,7 +44,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
     <div className="space-y-6">
       <PageHeader
         title="Attendance Detail"
-        description="Captured GPS, accuracy, notes, device information, and adjustment workflow. This record updates automatically."
+        description="Review the recorded times, location, notes, device details, and any manual changes."
         action={(
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <AttendanceLiveRefresh />

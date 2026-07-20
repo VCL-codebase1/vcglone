@@ -8,7 +8,7 @@ export default async function AuditLogsPage() {
   const logs = await prisma.auditLog.findMany({ include: { actor: true }, orderBy: { createdAt: "desc" }, take: 250 });
   return (
     <div className="space-y-6">
-      <PageHeader title="Audit Logs" description="System events for login, attendance, leave decisions, admin changes, and settings updates." />
+      <PageHeader title="Audit Logs" description="Review sign-ins, attendance changes, leave decisions, account updates, and settings changes." />
       <Table>
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Time</th><th className="px-4 py-3">Actor</th><th className="px-4 py-3">Action</th><th className="px-4 py-3">Entity</th><th className="px-4 py-3">Metadata</th></tr></thead>
         <tbody className="divide-y divide-line">

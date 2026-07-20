@@ -44,12 +44,12 @@ export default async function AdminAttendancePage({ searchParams }: { searchPara
     <div className="space-y-6">
       <PageHeader
         title="Attendance Records"
-        description="Historical and all-time attendance records remain available here for review, filtering, export, and adjustments."
+        description="Review, filter, download, or correct past attendance entries."
         action={(
           <div className="flex flex-col gap-2 sm:flex-row">
             <AttendanceLiveRefresh />
             <LinkButton href="/admin/today-attendance" variant="secondary">Today&apos;s attendance</LinkButton>
-            <LinkButton href={`/api/reports/attendance?${query}`} variant="secondary">Export CSV</LinkButton>
+            <LinkButton href={`/api/reports/attendance?${query}`} variant="secondary">Download report</LinkButton>
           </div>
         )}
       />

@@ -15,9 +15,12 @@ export default async function NewEmployeePage() {
   const roleOptions = actor.role === Role.SUPER_ADMIN
     ? [Role.EMPLOYEE, Role.MANAGER, Role.HR_ADMIN]
     : [Role.EMPLOYEE, Role.MANAGER];
+  const description = actor.role === Role.SUPER_ADMIN
+    ? "Create an employee, manager, or HR account and set their first sign-in password."
+    : "Create an employee or manager account and set their first sign-in password.";
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <PageHeader title="New Account" description="Create a workforce account with a secure initial password. Super Admin access cannot be created from this form." />
+      <PageHeader title="New Account" description={description} />
       <EmployeeCreateForm
         departments={departments}
         managers={managers.map(({ id, firstName, lastName }) => ({ id, firstName, lastName }))}

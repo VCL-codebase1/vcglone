@@ -69,7 +69,7 @@ export default async function LoginPage() {
             </div>
 
             <div className="mt-7 border-t border-line pt-5 text-center">
-              <p className="text-xs leading-5 text-muted">Need help signing in? Contact your VCGL system administrator.</p>
+              <p className="text-xs leading-5 text-muted">Need help signing in? Contact HR or your administrator.</p>
               <p className="mt-2 text-[11px] text-slate-400">&copy; {new Date().getFullYear()} Vethan Concepts Group Limited</p>
             </div>
           </Card>

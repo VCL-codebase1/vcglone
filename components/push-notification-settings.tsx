@@ -149,7 +149,7 @@ export function PushNotificationSettings() {
 
       {installRequired ? <div className="mt-4 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /><p>On iPhone, open the Share menu, choose <strong>Add to Home Screen</strong>, then open vcglOne from its Home Screen icon to enable notifications.</p></div> : null}
       {!supported && !installRequired ? <div className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm text-muted">This browser does not support phone notifications. Try the installed app, Chrome, Edge, Firefox, or Safari on a supported device.</div> : null}
-      {loaded && !configuration.configured ? <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Phone delivery is not configured on the server yet. Add the VAPID keys to the deployment environment to activate it.</div> : null}
+      {loaded && !configuration.configured ? <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Phone notifications are temporarily unavailable. Please contact your administrator.</div> : null}
       {permission === "denied" ? <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Notifications are blocked for vcglOne. Allow them in the browser or phone notification settings, then return here.</div> : null}
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">

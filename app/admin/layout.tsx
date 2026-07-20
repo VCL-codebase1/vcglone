@@ -31,7 +31,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const nav = actor.role === Role.HR_ADMIN ? [...hrSelfServiceNav, ...adminNav] : adminNav;
-  return <DashboardShell area="Admin console" nav={nav}>{children}</DashboardShell>;
+  return <DashboardShell area="Administration" nav={nav}>{children}</DashboardShell>;
 }
 
 

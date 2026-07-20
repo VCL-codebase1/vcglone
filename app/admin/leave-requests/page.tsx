@@ -22,7 +22,7 @@ export default async function AdminLeaveRequestsPage({ searchParams }: { searchP
   const query = new URLSearchParams(searchParams as Record<string, string>).toString();
   return (
     <div className="space-y-6">
-      <PageHeader title="Leave Requests" description="HR approval desk for employee leave requests." action={<LinkButton href={`/api/reports/leave?${query}`} variant="secondary">Export CSV</LinkButton>} />
+      <PageHeader title="Leave Requests" description="Review and decide employee leave requests." action={<LinkButton href={`/api/reports/leave?${query}`} variant="secondary">Download report</LinkButton>} />
       <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-2 xl:grid-cols-4">
         <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
         <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="type" defaultValue={searchParams.type || ""}><option value="">All leave types</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select>

@@ -72,7 +72,7 @@ export async function TaskListPage({
   const description = scope === "mine"
     ? "Prioritize your work, raise blockers early, and submit completed work for review."
     : scope === "team"
-      ? "Delegate work, monitor delivery, resolve blockers, and review submissions."
+      ? "Assign work, track progress, resolve blockers, and review completed tasks."
       : "See workload, deadlines, blockers, and delivery across the organization.";
   const canCreate = scope !== "mine" && user.role !== Role.EMPLOYEE;
   const createHref = user.role === Role.MANAGER ? "/manager/tasks/new" : "/admin/tasks/new";
@@ -122,7 +122,7 @@ export async function TaskListPage({
             return <tr key={task.id} className="transition hover:bg-surface/60"><td className="px-4 py-3"><Link href={taskHref(user.role, task.id)} className="font-semibold text-brand hover:underline">{task.name}</Link><p className="text-xs text-muted">{task.taskCode}</p>{task.steps.length && task.assigneeId !== user.id ? <p className="mt-1 text-xs font-semibold text-brand">{task.steps.length} delegated step{task.steps.length === 1 ? "" : "s"} for you</p> : null}</td><td className="px-4 py-3">{task.assignee.firstName} {task.assignee.lastName}</td><td className="px-4 py-3">{task.priority}</td><td className={overdueTask ? "px-4 py-3 font-semibold text-amber-700" : "px-4 py-3"}>{formatDateTime(task.dueAt)}</td><td className="px-4 py-3"><StatusBadge value={overdueTask ? "OVERDUE" : task.status} /></td></tr>;
           })}</tbody></Table></div>
         </>
-      ) : <Card><EmptyState title="No tasks found" description={q || status || priority || departmentId ? "Try changing the filters." : "Tasks in this workspace will appear here."} /></Card>}
+      ) : <Card><EmptyState title="No tasks found" description={q || status || priority || departmentId ? "Try changing the filters." : "Tasks will appear here once they are assigned."} /></Card>}
     </div>
   );
 }

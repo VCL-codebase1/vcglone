@@ -26,7 +26,7 @@ export function SystemPulse() {
   return (
     <div className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-ink shadow-soft sm:w-auto">
       <Activity className={isError ? "h-4 w-4 text-danger" : "h-4 w-4 text-success"} aria-hidden />
-      <span>{isError ? "System check unavailable" : `${data?.app || "vcglOne"} online`}</span>
+      <span>{isError ? "Service status unavailable" : `${data?.app || "vcglOne"} is available`}</span>
     </div>
   );
 }

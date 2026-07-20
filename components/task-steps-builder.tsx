@@ -83,7 +83,7 @@ export function TaskStepsBuilder({ departments, people, minDate }: { departments
             </div>
           </div>
         );
-      })}</div> : <p className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-muted">No steps added. The task will follow the existing workflow.</p>}
+      })}</div> : <p className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-muted">No steps added. The assignee will complete the task as one piece of work.</p>}
     </section>
   );
 }

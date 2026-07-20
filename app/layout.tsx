@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   applicationName: "vcglOne",
   title: "vcglOne",
-  description: "Internal workforce operations platform for attendance, leave, employee records, reporting, and audit logs.",
+  description: "Manage attendance, leave, employee information, tasks, and reports in one place.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

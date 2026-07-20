@@ -16,7 +16,7 @@ export default async function EmployeesPage() {
   });
   return (
     <div className="space-y-6">
-      <PageHeader title="Accounts" description="Create and manage workforce accounts within your access level." action={<LinkButton href="/admin/employees/new">New account</LinkButton>} />
+      <PageHeader title="Accounts" description="Create accounts and keep employee details up to date." action={<LinkButton href="/admin/employees/new">New account</LinkButton>} />
       <Table>
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee ID</th><th className="px-4 py-3">Name</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Department</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3">Status</th></tr></thead>
         <tbody className="divide-y divide-line">
