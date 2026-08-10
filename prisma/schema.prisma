@@ -146,6 +146,7 @@ model User {
   assignedTaskSteps       TaskStep[]             @relation("TaskStepAssignee")
   delegatedTaskSteps      TaskStep[]             @relation("TaskStepDelegator")
   managedTaskSteps        TaskStep[]             @relation("TaskStepTargetManager")
+  knowledgeDocuments      KnowledgeDocument[]    @relation("KnowledgeDocumentUploader")
 
   @@index([departmentId])
   @@index([managerId])
@@ -606,4 +607,24 @@ model TaskReminderDelivery {
   @@unique([taskId, userId, kind, scheduledFor])
   @@index([userId, sentAt])
   @@index([taskId])
+}
+
+model KnowledgeDocument {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  category    String
+  fileName    String
+  mimeType    String
+  size        Int
+  data        Bytes
+  published   Boolean  @default(true)
+  uploaderId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  uploader User @relation("KnowledgeDocumentUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([published, category, createdAt])
+  @@index([uploaderId])
 }

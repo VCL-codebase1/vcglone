@@ -10,6 +10,7 @@ const nav = [
   { href: "/employee/tasks", label: "My Tasks", icon: "tasks" as const },
   { href: "/employee/task-reports", label: "Task Reports", icon: "reports" as const },
   { href: "/employee/chat", label: "Chat", icon: "chat" as const },
+  { href: "/employee/knowledge-base", label: "Knowledge Base", icon: "knowledge" as const },
   { href: "/employee/profile", label: "Profile", icon: "users" as const }
 ];
 

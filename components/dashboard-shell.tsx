@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, FileText, LayoutDashboard, ListChecks, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
+import { BookOpen, CalendarCheck, ClipboardList, FileText, LayoutDashboard, ListChecks, LogOut, Menu, MessageSquare, Settings, Users } from "lucide-react";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -22,7 +22,8 @@ const iconMap = {
   reports: FileText,
   settings: Settings,
   chat: MessageSquare,
-  tasks: ListChecks
+  tasks: ListChecks,
+  knowledge: BookOpen
 };
 
 type NavItem = {

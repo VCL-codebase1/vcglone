@@ -7,6 +7,7 @@ const adminNav = [
   { href: "/admin/tasks", label: "Organization Tasks", icon: "tasks" as const },
   { href: "/admin/task-reports", label: "Task Analytics", icon: "reports" as const },
   { href: "/admin/chat", label: "Chat", icon: "chat" as const },
+  { href: "/admin/knowledge-base", label: "Knowledge Base", icon: "knowledge" as const },
   { href: "/admin/employees", label: "Employees", icon: "users" as const },
   { href: "/admin/departments", label: "Departments", icon: "users" as const },
   { href: "/admin/today-attendance", label: "Today's Attendance", icon: "attendance" as const },
