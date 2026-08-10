@@ -21,12 +21,12 @@ export function KnowledgeUploadForm() {
 
   return (
     <form ref={formRef} action={action} encType="multipart/form-data" className="grid gap-4 lg:grid-cols-2">
-      <Field label="Document title"><Input name="title" required minLength={3} maxLength={160} placeholder="e.g. Employee Code of Conduct" /></Field>
+      <Field label="Title"><Input name="title" required minLength={3} maxLength={160} placeholder="Document title" /></Field>
       <Field label="Category">
         <Select name="category" defaultValue={KNOWLEDGE_CATEGORIES[0]}>{KNOWLEDGE_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</Select>
       </Field>
-      <div className="lg:col-span-2"><Field label="Summary" hint="A short explanation helps employees find the right document."><Textarea name="description" rows={3} maxLength={600} placeholder="What this document covers and when employees should use it." /></Field></div>
-      <div className="lg:col-span-2"><Field label="Document file" hint="PDF, Word, Excel, PowerPoint, text, or CSV. Maximum 10 MB."><Input name="document" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" required /></Field></div>
+      <div className="lg:col-span-2"><Field label="Description"><Textarea name="description" rows={3} maxLength={600} placeholder="Optional description" /></Field></div>
+      <div className="lg:col-span-2"><Field label="File" hint="PDF, Word, Excel, PowerPoint, text, or CSV · 10 MB maximum"><Input name="document" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" required /></Field></div>
       <label className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink">
         <input type="checkbox" name="published" defaultChecked className="h-4 w-4 accent-brand" />
         Publish immediately for employees
