@@ -16,9 +16,9 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-sm font-medium text-danger" role="alert">{message}</p> : null;
 }
 
-function SubmitButton() {
+function SubmitButton({ selfAssigned }: { selfAssigned: boolean }) {
   const { pending } = useFormStatus();
-  return <Button type="submit" className="min-h-12 w-full" disabled={pending}>{pending ? "Creating task..." : "Create and assign task"}</Button>;
+  return <Button type="submit" className="min-h-12 w-full" disabled={pending}>{pending ? "Creating task..." : selfAssigned ? "Create task" : "Create and assign task"}</Button>;
 }
 
 export function TaskCreateForm({
@@ -26,13 +26,15 @@ export function TaskCreateForm({
   people,
   departments,
   priorities,
-  minDate
+  minDate,
+  selfAssigned = false
 }: {
   assignees: AssigneeOption[];
   people: PersonOption[];
   departments: DepartmentOption[];
   priorities: string[];
   minDate: string;
+  selfAssigned?: boolean;
 }) {
   const [state, formAction] = useFormState(createTask, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -82,13 +84,13 @@ export function TaskCreateForm({
         </Field>
         <Field label="Expected outcome" hint="Optional, but useful for a faster completion review."><Textarea name="expectedOutcome" rows={3} placeholder="What should a successful result look like?" /></Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Assign to">
+          {selfAssigned ? <input type="hidden" name="assigneeId" value={assignees[0]?.id} /> : <Field label="Assign to">
             <Select name="assigneeId" required defaultValue="" aria-invalid={Boolean(error("assigneeId"))}>
               <option value="" disabled>Select a team member</option>
               {assignees.map((person) => <option key={person.id} value={person.id}>{person.name}{person.departmentName ? ` — ${person.departmentName}` : ""}</option>)}
             </Select>
             <FieldError message={error("assigneeId")} />
-          </Field>
+          </Field>}
           <Field label="Priority"><Select name="priority" defaultValue="MEDIUM">{priorities.map((item) => <option key={item} value={item}>{item}</option>)}</Select></Field>
           <Field label="Start date and time" hint="Optional">
             <Input type="datetime-local" name="startAt" min={minDate} aria-invalid={Boolean(error("startAt"))} />
@@ -99,8 +101,7 @@ export function TaskCreateForm({
             <FieldError message={error("dueAt")} />
           </Field>
         </div>
-        <TaskStepsBuilder minDate={minDate} departments={departments} people={people} />
-        <FieldError message={error("taskSteps")} />
+        {!selfAssigned ? <><TaskStepsBuilder minDate={minDate} departments={departments} people={people} /><FieldError message={error("taskSteps")} /></> : null}
       </Card>
 
       <div className="space-y-5">
@@ -116,7 +117,7 @@ export function TaskCreateForm({
             {[{ value: 1440, label: "24 hours before" }, { value: 120, label: "2 hours before" }, { value: 0, label: "At the deadline" }].map((item) => <label key={item.value} className="flex items-center gap-3 rounded-xl border border-line p-3 text-sm font-medium text-ink"><input type="checkbox" name="reminderOffsets" value={item.value} defaultChecked className="h-4 w-4 rounded border-line" />{item.label}</label>)}
           </div>
         </Card>
-        <SubmitButton />
+        <SubmitButton selfAssigned={selfAssigned} />
       </div>
     </form>
   );

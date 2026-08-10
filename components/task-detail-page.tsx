@@ -37,7 +37,8 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
   const overdue = isTaskOverdue(task);
   const closed = task.status === TaskStatus.COMPLETED || task.status === TaskStatus.CANCELLED;
   const isAssignee = task.assigneeId === actor.id;
-  const reviewer = actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN || task.assignedById === actor.id || (actor.role === Role.MANAGER && (task.assignee.managerId === actor.id || task.assignee.secondaryManagerId === actor.id));
+  const selfManaged = actor.role === Role.EMPLOYEE && task.assignedById === actor.id && task.assigneeId === actor.id;
+  const reviewer = actor.role === Role.HR_ADMIN || actor.role === Role.SUPER_ADMIN || (actor.role !== Role.EMPLOYEE && task.assignedById === actor.id) || (actor.role === Role.MANAGER && (task.assignee.managerId === actor.id || task.assignee.secondaryManagerId === actor.id));
   const completedSteps = task.steps.filter((step) => step.status === TaskStepStatus.COMPLETED).length;
   const incompleteRequiredSteps = task.steps.filter((step) => step.required && step.status !== TaskStepStatus.COMPLETED).length;
   const backHref = actor.role === Role.EMPLOYEE ? "/employee/tasks" : actor.role === Role.MANAGER ? "/manager/tasks" : "/admin/tasks";
@@ -53,7 +54,7 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
   }) : [];
 
   return <div className="space-y-5">
-    <PageHeader title={task.name} description={`${task.taskCode} · Delegated by ${task.assignedBy.firstName} ${task.assignedBy.lastName}`} action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={overdue ? "OVERDUE" : task.status} /><Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back</Link></div>} />
+    <PageHeader title={task.name} description={selfManaged ? `${task.taskCode} · Personal task` : `${task.taskCode} · Delegated by ${task.assignedBy.firstName} ${task.assignedBy.lastName}`} action={<div className="flex flex-wrap items-center gap-2"><StatusBadge value={overdue ? "OVERDUE" : task.status} /><Link href={backHref} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand"><ArrowLeft className="h-4 w-4" />Back</Link></div>} />
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
       <div className="space-y-5">
         <Card className="space-y-5">
@@ -96,13 +97,13 @@ export async function TaskDetailPage({ taskId }: { taskId: string }) {
           })}</div>
         </Card> : null}
 
-        {isAssignee && !closed ? <Card className="space-y-4"><div><h2 className="font-semibold text-ink">Update your work</h2><p className="text-sm text-muted">Keep the manager informed and submit only when the work is ready for review.</p></div>
+        {isAssignee && !closed ? <Card className="space-y-4"><div><h2 className="font-semibold text-ink">Update task</h2><p className="text-sm text-muted">{selfManaged ? "Track progress and complete the task when finished." : "Update progress and submit completed work for review."}</p></div>
           <div className="flex flex-wrap gap-2">
             {task.status === TaskStatus.ASSIGNED || task.status === TaskStatus.CHANGES_REQUESTED ? <form action={startTask}><input type="hidden" name="taskId" value={task.id} /><Button>Start work</Button></form> : null}
             {task.status === TaskStatus.BLOCKED ? <form action={resumeTask}><input type="hidden" name="taskId" value={task.id} /><Button>Resume work</Button></form> : null}
           </div>
           {task.status === TaskStatus.ASSIGNED || task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? <form action={blockTask} className="grid gap-3 sm:grid-cols-[1fr_auto]"><input type="hidden" name="taskId" value={task.id} /><Input name="reason" required placeholder="What is blocking progress?" /><Button variant="secondary">Raise blocker</Button></form> : null}
-          {task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? incompleteRequiredSteps ? <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Complete the remaining {incompleteRequiredSteps} required task step{incompleteRequiredSteps === 1 ? "" : "s"} before submitting the main task.</p> : <form action={submitTaskForReview} className="space-y-3"><input type="hidden" name="taskId" value={task.id} /><Field label="Completion note" hint="Summarize what was completed and where the result can be found."><Textarea name="note" rows={3} placeholder="Work completed, validation performed, and result attached…" /></Field><Button>Submit for review</Button></form> : null}
+          {task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.CHANGES_REQUESTED ? incompleteRequiredSteps ? <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Complete the remaining {incompleteRequiredSteps} required task step{incompleteRequiredSteps === 1 ? "" : "s"} before submitting the main task.</p> : <form action={submitTaskForReview} className="space-y-3"><input type="hidden" name="taskId" value={task.id} /><Field label="Completion note" hint={selfManaged ? "Optional" : "Summarize what was completed and where the result can be found."}><Textarea name="note" rows={3} placeholder={selfManaged ? "Add a completion note" : "Work completed, validation performed, and result attached…"} /></Field><Button>{selfManaged ? "Complete task" : "Submit for review"}</Button></form> : null}
           {task.status === TaskStatus.IN_REVIEW ? <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Your completion is waiting for manager review.</p> : null}
         </Card> : null}
 

@@ -9,7 +9,7 @@ import { createAuditLog } from "@/lib/audit";
 import { createNotification, createNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/push-notifications";
-import { requireRole, requireUser } from "@/lib/rbac";
+import { requireUser } from "@/lib/rbac";
 import { canAccessTask, canAssignTo, taskHref } from "@/lib/tasks";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -126,7 +126,7 @@ async function notifyStepStakeholders(
 function canReview(actor: { id: string; role: Role }, task: { assignedById: string; assignee: { managerId: string | null; secondaryManagerId: string | null } }) {
   return actor.role === Role.HR_ADMIN
     || actor.role === Role.SUPER_ADMIN
-    || task.assignedById === actor.id
+    || (actor.role !== Role.EMPLOYEE && task.assignedById === actor.id)
     || (actor.role === Role.MANAGER && (task.assignee.managerId === actor.id || task.assignee.secondaryManagerId === actor.id));
 }
 
@@ -162,7 +162,7 @@ export async function createTask(
   _previousState: TaskCreateActionState,
   formData: FormData
 ): Promise<TaskCreateActionState> {
-  const actor = await requireRole([Role.MANAGER, Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  const actor = await requireUser();
   const reminderOffsets = formData.getAll("reminderOffsets").map(Number).filter(Number.isFinite);
   let startAt: Date | undefined;
   let dueAt: Date | undefined;
@@ -176,7 +176,7 @@ export async function createTask(
     name: value(formData, "name"),
     description: value(formData, "description"),
     expectedOutcome: value(formData, "expectedOutcome"),
-    assigneeId: value(formData, "assigneeId"),
+    assigneeId: actor.role === Role.EMPLOYEE ? actor.id : value(formData, "assigneeId"),
     priority: value(formData, "priority") || TaskPriority.MEDIUM,
     startAt,
     dueAt,
@@ -207,6 +207,7 @@ export async function createTask(
   } catch {
     return taskCreateError("Review the task steps and make sure every delegated step has a department and employee.", { taskSteps: "Complete or remove each unfinished step." });
   }
+  if (actor.role === Role.EMPLOYEE && draftSteps.length) return taskCreateError("Employees can only create self-assigned tasks without delegated steps.");
   const selectedIds = Array.from(new Set([parsed.assigneeId, ...draftSteps.filter((step) => step.assigneeId !== "MAIN").map((step) => step.assigneeId)]));
   let selectedPeople: Array<{
     id: string;
@@ -300,12 +301,14 @@ export async function createTask(
         include: { assignee: { select: { role: true } }, steps: true }
       });
       const notificationMap = new Map<string, { userId: string; title: string; message: string; href: string }>();
-      notificationMap.set(createdTask.assigneeId, {
-        userId: createdTask.assigneeId,
-        title: "New task assigned",
-        message: `${createdTask.taskCode}: ${createdTask.name}`,
-        href: taskHref(createdTask.assignee.role, createdTask.id)
-      });
+      if (createdTask.assigneeId !== actor.id) {
+        notificationMap.set(createdTask.assigneeId, {
+          userId: createdTask.assigneeId,
+          title: "New task assigned",
+          message: `${createdTask.taskCode}: ${createdTask.name}`,
+          href: taskHref(createdTask.assignee.role, createdTask.id)
+        });
+      }
       for (const step of createdTask.steps) {
         if (step.assigneeId !== createdTask.assigneeId) {
           const assignee = peopleById.get(step.assigneeId);
@@ -327,7 +330,7 @@ export async function createTask(
         }
       }
       const notifications = Array.from(notificationMap.values());
-      await transaction.notification.createMany({ data: notifications });
+      if (notifications.length) await transaction.notification.createMany({ data: notifications });
       await transaction.auditLog.create({
         data: {
           actorId: actor.id,
@@ -418,6 +421,24 @@ export async function submitTaskForReview(formData: FormData) {
   if (task.assigneeId !== actor.id || (task.status !== TaskStatus.IN_PROGRESS && task.status !== TaskStatus.CHANGES_REQUESTED)) throw new Error("This task is not ready for submission.");
   const incompleteRequiredSteps = await prisma.taskStep.count({ where: { taskId: task.id, required: true, status: { not: TaskStepStatus.COMPLETED } } });
   if (incompleteRequiredSteps) throw new Error(`Complete the remaining ${incompleteRequiredSteps} required task step${incompleteRequiredSteps === 1 ? "" : "s"} before submitting.`);
+  const selfManaged = actor.role === Role.EMPLOYEE && task.assignedById === actor.id;
+  if (selfManaged) {
+    const now = new Date();
+    await prisma.task.update({
+      where: { id: task.id },
+      data: {
+        status: TaskStatus.COMPLETED,
+        submissionNote: note,
+        submittedAt: now,
+        approvedAt: now,
+        completedAt: now,
+        activities: { create: { actorId: actor.id, action: "COMPLETED", message: note ? `Task completed: ${note}` : "Task completed." } }
+      }
+    });
+    await createAuditLog({ actorId: actor.id, action: "TASK_COMPLETED", entityType: "Task", entityId: task.id, metadata: { selfManaged: true } });
+    revalidateTask(task.id);
+    return;
+  }
   await prisma.task.update({ where: { id: task.id }, data: { status: TaskStatus.IN_REVIEW, submissionNote: note, submittedAt: new Date(), activities: { create: { actorId: actor.id, action: "SUBMITTED", message: note ? `Submitted for review: ${note}` : "Submitted for review." } } } });
   await createNotification({ userId: task.assignedById, title: "Task ready for review", message: `${task.taskCode}: ${task.name}`, href: taskHref(task.assignedBy.role, task.id) });
   await createAuditLog({ actorId: actor.id, action: "TASK_SUBMITTED", entityType: "Task", entityId: task.id });

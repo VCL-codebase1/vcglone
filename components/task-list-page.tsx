@@ -74,12 +74,12 @@ export async function TaskListPage({
     : scope === "team"
       ? "Team tasks, deadlines, and reviews."
       : "Organization tasks and deadlines.";
-  const canCreate = scope !== "mine" && user.role !== Role.EMPLOYEE;
-  const createHref = user.role === Role.MANAGER ? "/manager/tasks/new" : "/admin/tasks/new";
+  const canCreate = user.role === Role.EMPLOYEE || scope !== "mine";
+  const createHref = user.role === Role.EMPLOYEE ? "/employee/tasks/new" : user.role === Role.MANAGER ? "/manager/tasks/new" : "/admin/tasks/new";
 
   return (
     <div className="space-y-5">
-      <PageHeader title={departmentId ? `${departments.find((item) => item.id === departmentId)?.name || "Department"} Tasks` : title} description={description} action={canCreate ? <LinkButton href={createHref}>Delegate task</LinkButton> : undefined} />
+      <PageHeader title={departmentId ? `${departments.find((item) => item.id === departmentId)?.name || "Department"} Tasks` : title} description={description} action={canCreate ? <LinkButton href={createHref}>{user.role === Role.EMPLOYEE ? "Create task" : "Delegate task"}</LinkButton> : undefined} />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Active", active, "Open work"],
