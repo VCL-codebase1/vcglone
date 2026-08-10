@@ -22,10 +22,10 @@ export default async function AttendanceHistoryPage({ searchParams }: { searchPa
   return (
     <div className="space-y-6">
       <PageHeader title="Attendance History" description="Filter and review your personal attendance records." />
-      <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-3">
-        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="from" defaultValue={searchParams.from} />
-        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="to" defaultValue={searchParams.to} />
-        <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Apply filters</button>
+      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-3">
+        <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="from" defaultValue={searchParams.from} />
+        <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="to" defaultValue={searchParams.to} />
+        <button className="min-h-11 w-full rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Apply filters</button>
       </form>
       {records.length ? (
         <>

@@ -53,9 +53,9 @@ export async function TaskReportPage({ scope, searchParams }: { scope: ReportSco
     <Card className="p-4 print:hidden">
       <form className={`grid gap-3 ${scope === "mine" ? "md:grid-cols-[180px_1fr_auto]" : "md:grid-cols-2 xl:grid-cols-[160px_180px_1fr_1fr_auto]"}`}>
         <Select name="period" defaultValue={report.range.period}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></Select>
-        <input name="date" type="date" defaultValue={report.range.dateInput} className="focus-ring min-h-11 rounded-xl border border-line bg-white px-3 text-sm text-ink dark:bg-panel" />
+        <input name="date" type="date" defaultValue={report.range.dateInput} className="focus-ring min-h-11 rounded-full border border-transparent bg-surface px-4 text-sm text-ink" />
         {scope !== "mine" ? <><Select name="departmentId" defaultValue={searchParams?.departmentId || ""}><option value="">All departments</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</Select><Select name="employeeId" defaultValue={searchParams?.employeeId || ""}><option value="">Entire {scope === "team" ? "team" : "organization"}</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</Select></> : null}
-        <button className="focus-ring min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white">Generate report</button>
+        <button className="focus-ring min-h-11 rounded-full bg-brand px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Generate report</button>
       </form>
     </Card>
 

@@ -90,26 +90,26 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
         <StatCard label="Pending review" value={pendingReview} />
       </div>
 
-      <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
+      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 lg:grid-cols-4">
         <input
-          className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm"
+          className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm"
           type="search"
           name="search"
           placeholder="Search name, ID, or email"
           defaultValue={searchParams.search}
         />
-        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="department" defaultValue={searchParams.department || ""}>
+        <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="department" defaultValue={searchParams.department || ""}>
           <option value="">All departments</option>
           {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
         </select>
-        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="status" defaultValue={searchParams.status || ""}>
+        <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="status" defaultValue={searchParams.status || ""}>
           <option value="">All statuses</option>
           <option value="checked-in">Checked in, not out</option>
           <option value="checked-out">Checked out</option>
           <option value="on-leave">On approved leave</option>
           <option value="pending-review">Pending review</option>
         </select>
-        <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
+        <button className="min-h-11 w-full rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Filter</button>
       </form>
 
       {rows.length ? (

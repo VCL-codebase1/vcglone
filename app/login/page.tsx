@@ -33,7 +33,7 @@ export default async function LoginPage() {
 
         <section className="flex min-h-[calc(100vh-2rem)] flex-col bg-[#ffffff] lg:min-h-0">
           <div className="relative h-48 overflow-hidden bg-[#dff2ff] lg:hidden">
-            <Image src="/images/vcgl-login-interface.png" alt="VCGL workplace illustration" fill priority sizes="100vw" className="object-contain object-bottom" />
+            <Image src="/images/vcgl-login-interface.png" alt="VCGL workplace illustration" fill priority sizes="(max-width: 1023px) 100vw, 0px" className="object-contain object-bottom" />
           </div>
           <div className="relative z-10 -mt-5 flex flex-1 items-center justify-center rounded-t-[1.75rem] bg-[#ffffff] px-6 py-10 sm:px-10 lg:mt-0 lg:rounded-none lg:px-14">
             <div className="w-full max-w-sm">

@@ -80,10 +80,11 @@ function dashboardTime(value?: string) {
 }
 
 function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact = false }: { checkedInAt?: string; checkedOutAt?: string; totalMinutes?: number | null; compact?: boolean }) {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     if (checkedOutAt) return undefined;
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, [checkedOutAt]);
@@ -91,15 +92,16 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
   if (!checkedInAt) return null;
 
   const start = new Date(checkedInAt).getTime();
-  const end = checkedOutAt ? new Date(checkedOutAt).getTime() : now.getTime();
-  const elapsedSeconds = totalMinutes && checkedOutAt ? totalMinutes * 60 : Math.max(0, Math.floor((end - start) / 1000));
+  const end = checkedOutAt ? new Date(checkedOutAt).getTime() : now?.getTime();
+  const elapsedSeconds = totalMinutes && checkedOutAt ? totalMinutes * 60 : end ? Math.max(0, Math.floor((end - start) / 1000)) : null;
+  const elapsedLabel = elapsedSeconds === null ? "--:--:--" : formatElapsedTime(elapsedSeconds);
   const isComplete = Boolean(checkedOutAt);
 
   if (compact) {
     return (
       <div>
         <p className="text-xs font-medium text-muted">Duration</p>
-        <p className="mt-1 text-base font-semibold text-ink tabular-nums">{formatElapsedTime(elapsedSeconds)}</p>
+        <p className="mt-1 text-base font-semibold text-ink tabular-nums">{elapsedLabel}</p>
       </div>
     );
   }
@@ -107,7 +109,7 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
   return (
     <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
       <p className="text-sm font-medium text-brand">Working time</p>
-      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{formatElapsedTime(elapsedSeconds)}</p>
+      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{elapsedLabel}</p>
       <p className="mt-1 text-sm text-muted">{isComplete ? "Final time recorded at check-out." : "Counting from your check-in time."}</p>
     </div>
   );

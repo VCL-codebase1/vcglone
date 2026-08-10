@@ -745,15 +745,15 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
   return (
     <>
     <section
-      className="relative -mx-3 -my-5 grid h-[calc(100dvh_-_4.75rem_-_env(safe-area-inset-top))] min-h-0 overflow-hidden border-y border-line bg-white shadow-[0_20px_60px_rgba(23,32,51,0.09)] dark:bg-panel sm:mx-0 sm:my-0 sm:h-[calc(100dvh_-_6.5rem_-_env(safe-area-inset-top))] sm:rounded-2xl sm:border md:h-[calc(100dvh_-_13rem_-_env(safe-area-inset-top))] md:max-h-[900px] lg:h-[calc(100dvh-13rem)] lg:min-h-[640px] lg:grid-cols-[minmax(300px,360px)_1fr]"
+      className="relative -mx-3 -my-5 grid h-[calc(100dvh_-_4.75rem_-_env(safe-area-inset-top))] min-h-0 overflow-hidden border-y border-line bg-white shadow-[0_20px_55px_rgba(31,45,89,0.1)] sm:mx-0 sm:my-0 sm:h-[calc(100dvh_-_6.5rem_-_env(safe-area-inset-top))] sm:rounded-[1.75rem] sm:border md:h-[calc(100dvh_-_13rem_-_env(safe-area-inset-top))] md:max-h-[900px] lg:h-[calc(100dvh-13rem)] lg:min-h-[640px] lg:grid-cols-[minmax(300px,360px)_1fr]"
       onDragEnter={(event) => { event.preventDefault(); setIsDraggingFiles(true); }}
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDraggingFiles(false); }}
       onDrop={handleFileDrop}
     >
       {isDraggingFiles && selectedConversationId ? <div className="pointer-events-none absolute inset-3 z-40 flex items-center justify-center rounded-2xl border-2 border-dashed border-brand bg-brandSoft/95 backdrop-blur"><div className="text-center"><Paperclip className="mx-auto h-8 w-8 text-brand" aria-hidden /><p className="mt-2 font-semibold text-brand">Drop files to attach</p><p className="mt-1 text-xs text-muted">Up to five files, 5 MB each</p></div></div> : null}
-      <aside className={`${selectedConversationId ? "hidden lg:flex" : "flex"} min-h-0 flex-col border-r border-line bg-white dark:bg-panel`}>
-        <div className="border-b border-line bg-white/95 p-3.5 backdrop-blur dark:bg-panel/95 sm:p-4">
+      <aside className={`${selectedConversationId ? "hidden lg:flex" : "flex"} min-h-0 flex-col border-r border-line bg-white`}>
+        <div className="border-b border-line bg-[#eff8fe] p-3.5 sm:p-4">
           <div className="flex items-center justify-between gap-3">
             <div><h2 className="text-xl font-bold tracking-tight text-ink">Chats</h2><p className="text-xs text-muted">{totalUnread ? `${totalUnread} unread message${totalUnread === 1 ? "" : "s"}` : `${conversations.length} conversation${conversations.length === 1 ? "" : "s"}`}</p></div>
             <div className="flex items-center gap-2"><MessageSearchDialog onSelect={handleSearchSelect} /><NewConversationDialog onCreated={(conversationId) => selectConversation(conversationId)} /></div>
@@ -779,10 +779,10 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
         </div>
       </aside>
 
-      <div className={`${selectedConversationId ? "flex" : "hidden lg:flex"} relative min-h-0 flex-col bg-white dark:bg-panel`}>
+      <div className={`${selectedConversationId ? "flex" : "hidden lg:flex"} relative min-h-0 flex-col bg-white`}>
         {selectedConversation ? (
           <>
-            <header className="flex min-h-[68px] items-center gap-3 border-b border-line bg-white/95 px-2.5 py-2.5 backdrop-blur dark:bg-panel/95 sm:px-5">
+            <header className="flex min-h-[68px] items-center gap-3 border-b border-line bg-white px-2.5 py-2.5 sm:px-5">
               <button type="button" onClick={closeConversation} className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-surface hover:text-brand lg:hidden" aria-label="Back to chats"><ArrowLeft className="h-5 w-5" aria-hidden /></button>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{selectedConversation.type === "GROUP" ? <Users className="h-5 w-5" aria-hidden /> : initials(selectedConversation.title)}</span>
               <div className="min-w-0 flex-1"><h2 className="truncate font-semibold text-ink">{selectedConversation.title}</h2><p className="mt-0.5 truncate text-xs text-muted">{selectedConversation.everyone ? "Everyone at VCGL" : selectedConversation.type === "GROUP" ? `${selectedConversation.members.length} members · ${selectedConversation.members.filter((member) => member.online).length} online` : selectedConversation.members.filter((member) => member.id !== currentUser.id).map((member) => member.online ? "Online now" : member.lastSeenAt ? `Last seen ${shortTime(member.lastSeenAt)}` : member.jobTitle || "Offline").join(", ") || "Direct conversation"}</p></div>
@@ -790,7 +790,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
               <button type="button" onClick={() => setDetailsOpen(true)} className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-muted transition hover:bg-surface hover:text-brand dark:bg-panel" aria-label="Conversation details" title="Conversation details"><Info className="h-4 w-4" aria-hidden /></button>
               {selectedConversation.canManage ? <ManageConversationDialog conversation={selectedConversation} currentUserId={currentUser.id} /> : null}
             </header>
-            <div ref={messageScrollRef} onScroll={handleMessageScroll} className="relative min-h-0 flex-1 overflow-y-auto bg-[#f3f6f9] px-3 py-3 dark:bg-[#111827] sm:px-6 sm:py-5">
+            <div ref={messageScrollRef} onScroll={handleMessageScroll} className="relative min-h-0 flex-1 overflow-y-auto bg-[#edf3f9] px-3 py-3 sm:px-6 sm:py-5">
               {messagesQuery.hasNextPage ? <div className="mb-5 text-center"><button type="button" disabled={messagesQuery.isFetchingNextPage} onClick={() => void loadEarlierMessages()} className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-xs font-semibold text-brand shadow-sm transition hover:bg-brandSoft disabled:opacity-60 dark:bg-panel">{messagesQuery.isFetchingNextPage ? "Loading..." : "Load earlier messages"}</button></div> : null}
               {messagesQuery.isLoading ? <div className="flex min-h-60 items-center justify-center"><p className="rounded-full bg-white px-4 py-2 text-sm text-muted shadow-sm dark:bg-panel">Loading messages...</p></div> : visibleMessages.map((message, index) => {
                 const pendingMessage = "delivery" in message ? message as PendingMessage : null;
@@ -833,7 +833,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
               <div ref={messageEndRef} />
             </div>
             {newMessageCount > 0 ? <button type="button" onClick={() => scrollToBottom()} className="focus-ring absolute bottom-24 right-4 z-20 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm sm:right-6"><ArrowDown className="h-4 w-4" aria-hidden />{newMessageCount} new message{newMessageCount === 1 ? "" : "s"}</button> : null}
-            <div className="relative border-t border-line bg-[#f3f6f9] px-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-1.5 dark:bg-[#111827] sm:px-5 sm:pb-3">
+            <div className="relative border-t border-line bg-[#edf3f9] px-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-1.5 sm:px-5 sm:pb-3">
               <div className="min-h-5 px-1 text-xs font-medium text-brand" aria-live="polite">{typingMembers.length ? `${typingMembers.join(", ")} ${typingMembers.length === 1 ? "is" : "are"} typing...` : drafts[selectedConversation.id]?.trim() ? "Draft saved" : ""}</div>
               {replyingTo ? <div className="mb-2 flex items-start gap-3 rounded-xl border-l-4 border-brand bg-white px-3 py-2 shadow-sm dark:bg-panel"><Reply className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden /><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-brand">Replying to {replyingTo.sender.name}</p><p className="mt-0.5 truncate text-xs text-muted">{replyingTo.body || "Attachment"}</p></div><button type="button" onClick={() => setReplyingTo(null)} className="focus-ring rounded-full p-1 text-muted hover:bg-surface hover:text-ink" aria-label="Cancel reply"><X className="h-3.5 w-3.5" aria-hidden /></button></div> : null}
               {files.length ? <div className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <span key={`${file.name}-${index}`} className="inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink"><FileText className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden /><span className="max-w-48 truncate">{file.name}</span><button type="button" onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted hover:bg-white hover:text-danger" aria-label={`Remove ${file.name}`}><X className="h-3 w-3" aria-hidden /></button></span>)}</div> : null}

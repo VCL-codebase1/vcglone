@@ -7,12 +7,12 @@ import { forwardRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
+  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
   {
     variants: {
       variant: {
-        primary: "bg-brand text-white hover:bg-[#0b1f56]",
-        secondary: "border border-line bg-white text-ink hover:bg-surface dark:bg-panel",
+        primary: "bg-brand text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)] hover:bg-[#182a63]",
+        secondary: "border border-line bg-white text-ink hover:border-brand/25 hover:bg-brandSoft/50",
         danger: "bg-amber-700 text-white hover:bg-amber-800",
         ghost: "text-ink hover:bg-surface"
       }
@@ -41,9 +41,9 @@ export function LinkButton({
   return (
     <Link
       className={cn(
-        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition max-[420px]:w-full",
-        variant === "primary" && "bg-brand text-white hover:bg-[#0b1f56]",
-        variant === "secondary" && "border border-line bg-white text-ink hover:bg-surface dark:bg-panel",
+        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition max-[420px]:w-full",
+        variant === "primary" && "bg-brand text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)] hover:bg-[#182a63]",
+        variant === "secondary" && "border border-line bg-white text-ink hover:border-brand/25 hover:bg-brandSoft/50",
         className
       )}
       {...props}

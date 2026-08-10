@@ -53,13 +53,13 @@ export default async function AdminAttendancePage({ searchParams }: { searchPara
           </div>
         )}
       />
-      <form className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="from" defaultValue={searchParams.from} />
-        <input className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" type="date" name="to" defaultValue={searchParams.to} />
-        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
-        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="department" defaultValue={searchParams.department || ""}><option value="">All departments</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select>
-        <select className="w-full min-w-0 rounded-md border border-line px-3 py-2 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option>{Object.values(AttendanceStatus).map((status) => <option key={status}>{status}</option>)}</select>
-        <button className="min-h-10 w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Filter</button>
+      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="from" defaultValue={searchParams.from} />
+        <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="to" defaultValue={searchParams.to} />
+        <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
+        <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="department" defaultValue={searchParams.department || ""}><option value="">All departments</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select>
+        <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option>{Object.values(AttendanceStatus).map((status) => <option key={status}>{status}</option>)}</select>
+        <button className="min-h-11 w-full rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Filter</button>
       </form>
       <Table>
         <thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Department</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">In</th><th className="px-4 py-3">Out</th><th className="px-4 py-3">Duration</th><th className="px-4 py-3">Location</th><th className="px-4 py-3">Status</th></tr></thead>

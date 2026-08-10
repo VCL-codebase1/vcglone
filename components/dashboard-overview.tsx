@@ -16,7 +16,7 @@ export type DashboardMetric = {
 export function DashboardMetricStrip({ metrics }: { metrics: DashboardMetric[] }) {
   return (
     <Card className="overflow-hidden p-0 sm:p-0">
-      <div className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-px bg-[#d7e2ef] sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => {
           const content = (
             <>
@@ -28,7 +28,7 @@ export function DashboardMetricStrip({ metrics }: { metrics: DashboardMetric[] }
               {metric.detail ? <p className="mt-1 text-xs text-muted">{metric.detail}</p> : null}
             </>
           );
-          const className = "group block min-h-24 bg-white p-4 text-left transition hover:bg-surface sm:p-5 dark:bg-panel";
+          const className = "group block min-h-24 bg-white p-4 text-left transition hover:bg-[#f4f8fc] sm:p-5";
 
           return metric.href
             ? <Link key={metric.label} href={metric.href} className={className}>{content}</Link>
@@ -57,7 +57,7 @@ export function DashboardSectionHeader({
         {description ? <p className="mt-0.5 text-sm text-muted">{description}</p> : null}
       </div>
       {href ? (
-        <Link href={href} className="focus-ring shrink-0 rounded-lg px-2 py-1 text-sm font-semibold text-brand transition hover:bg-brandSoft">
+        <Link href={href} className="focus-ring shrink-0 rounded-full bg-brandSoft px-3 py-1.5 text-sm font-semibold text-brand transition hover:bg-[#d5ebfb]">
           {linkLabel}
         </Link>
       ) : null}

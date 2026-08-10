@@ -92,7 +92,7 @@ export async function TaskListPage({
       </div>
       <Card className="p-4">
         <form className={`grid gap-3 ${scope === "mine" ? "md:grid-cols-[minmax(180px,1fr)_180px_160px_auto]" : "md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_180px_160px_200px_auto]"}`}>
-          <input name="q" defaultValue={q} placeholder="Search task, ID, or employee" className="focus-ring min-h-11 rounded-xl border border-line bg-white px-3 text-sm text-ink dark:bg-panel" />
+          <input name="q" defaultValue={q} placeholder="Search task, ID, or employee" className="focus-ring min-h-11 rounded-full border border-transparent bg-surface px-4 text-sm text-ink" />
           <Select name="status" defaultValue={status || ""}>
             <option value="">All statuses</option><option value="OVERDUE">Overdue</option>
             {Object.values(TaskStatus).map((item) => <option key={item} value={item}>{item.replace(/_/g, " ")}</option>)}
@@ -101,7 +101,7 @@ export async function TaskListPage({
             <option value="">All priorities</option>{Object.values(TaskPriority).map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
           {scope !== "mine" ? <Select name="departmentId" defaultValue={departmentId || ""}><option value="">All departments</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</Select> : null}
-          <button className="focus-ring min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white">Apply filters</button>
+          <button className="focus-ring min-h-11 rounded-full bg-brand px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Apply filters</button>
         </form>
       </Card>
       {tasks.length ? (

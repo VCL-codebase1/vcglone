@@ -11,10 +11,10 @@ export const DrawerClose = DialogPrimitive.Close;
 export function DrawerContent({ children, className, title }: { children: ReactNode; className?: string; title?: string }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/35" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border border-line bg-white p-4 shadow-[0_-18px_60px_rgba(23,32,51,0.14)] outline-none dark:bg-panel dark:shadow-none",
+          "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[2rem] border border-line bg-[#f8fbfe] p-5 shadow-[0_-18px_60px_rgba(31,45,89,0.14)] outline-none",
           className
         )}
       >

@@ -9,7 +9,7 @@ export const Select = forwardRef<HTMLSelectElement, ComponentPropsWithoutRef<"se
       ref={ref}
       {...props}
       className={cn(
-        "focus-ring block min-h-11 w-full max-w-full min-w-0 rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink transition focus:border-brand/60 dark:bg-panel",
+        "focus-ring block min-h-11 w-full max-w-full min-w-0 rounded-full border border-transparent bg-surface px-4 py-2.5 text-sm text-ink transition focus:border-brand/30 focus:bg-white",
         className
       )}
     />
