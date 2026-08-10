@@ -16,12 +16,11 @@ export const runtime = "nodejs";
 export default async function AdminDashboardPage() {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const today = todayDateOnly();
-  const todayQueryDate = today.toISOString().slice(0, 10);
   const month = new Date().getMonth() + 1;
   const [selfAttendance, totalEmployees, pendingReview, onLeave, pendingLeave, todayAttendance, todayLeave, birthdays] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: actor.id, date: today } } }),
     prisma.user.count({ where: { employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN } } }),
-    prisma.attendanceRecord.count({ where: { date: today, requiresReview: true } }),
+    prisma.attendanceRecord.count({ where: { requiresReview: true } }),
     prisma.leaveRequest.count({ where: { status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } } }),
     prisma.leaveRequest.count({ where: { status: "PENDING" } }),
     prisma.attendanceRecord.findMany({ where: { date: today, employee: { employmentStatus: "ACTIVE", role: { not: Role.SUPER_ADMIN } } }, include: { employee: true }, orderBy: { checkInTime: "desc" } }),
@@ -97,7 +96,7 @@ export default async function AdminDashboardPage() {
         { label: "Active employees", value: totalEmployees, detail: "Organization-wide", href: "/admin/employees" },
         { label: "Currently checked in", value: currentlyCheckedIn, detail: `${checkedOutToday} checked out today`, href: "/admin/today-attendance?status=checked-in" },
         { label: "On leave", value: onLeave, detail: "Approved leave today", href: "/admin/leave-requests?status=APPROVED" },
-        { label: "Pending review", value: pendingReview, detail: "Attendance exceptions today", href: `/admin/attendance?location=missing&from=${todayQueryDate}&to=${todayQueryDate}`, attention: pendingReview > 0 }
+        { label: "Pending review", value: pendingReview, detail: "Attendance exceptions", href: "/admin/attendance?location=missing", attention: pendingReview > 0 }
       ]} />
       <TaskDashboardPanel user={{ id: actor.id, role: actor.role }} scope="organization" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
@@ -116,7 +115,7 @@ export default async function AdminDashboardPage() {
               <div className="flex items-center justify-between gap-4 p-3"><div><p className="text-sm font-semibold text-ink">Leave approvals</p><p className="text-xs text-muted">Awaiting HR decision</p></div><span className="text-xl font-semibold text-warning">{pendingLeave}</span></div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <LinkButton href={`/admin/attendance?location=missing&from=${todayQueryDate}&to=${todayQueryDate}`} variant="secondary">Review attendance</LinkButton>
+              <LinkButton href="/admin/attendance?location=missing" variant="secondary">Review attendance</LinkButton>
               <LinkButton href="/admin/leave-requests?status=PENDING" variant="secondary">Review leave</LinkButton>
             </div>
           </Card>
@@ -126,3 +125,6 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
+
+
+
