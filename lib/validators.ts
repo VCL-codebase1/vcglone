@@ -142,11 +142,19 @@ export const manualAttendanceSchema = z.object({
 });
 
 export const workPolicySchema = z.object({
-  workStartTime: z.string().regex(/^\d{2}:\d{2}$/),
-  workEndTime: z.string().regex(/^\d{2}:\d{2}$/),
+  workStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  workEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   gracePeriodMinutes: z.coerce.number().int().min(0).max(240),
-  timezone: z.string().trim().min(3),
-  workingDays: z.array(z.string()).min(1)
+  timezone: z.string().trim().min(3).refine((timeZone) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Enter a valid IANA timezone, such as Africa/Lagos."),
+  workingDays: z.array(z.string()).min(1),
+  checkOutReminderEnabled: z.boolean()
 });
 
 export const reportStatusSchema = z.nativeEnum(LeaveRequestStatus).optional();

@@ -23,3 +23,9 @@ export function roleTasks(role?: Role | string | null) {
   if (role === "MANAGER") return "/manager/my-tasks";
   return "/employee/tasks";
 }
+
+export function roleAttendance(role?: Role | string | null) {
+  if (role === "SUPER_ADMIN" || role === "HR_ADMIN") return "/admin/my-attendance";
+  if (role === "MANAGER") return "/manager/my-attendance";
+  return "/employee/attendance";
+}

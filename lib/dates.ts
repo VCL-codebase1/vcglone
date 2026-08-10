@@ -2,9 +2,9 @@ import { differenceInCalendarDays, eachDayOfInterval, isWeekend } from "date-fns
 
 const appTimeZone = process.env.APP_TIMEZONE || "Africa/Lagos";
 
-function datePartsInAppTimeZone(date: Date) {
+function datePartsInTimeZone(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: appTimeZone,
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
@@ -17,9 +17,13 @@ function datePartsInAppTimeZone(date: Date) {
   };
 }
 
-export function todayDateOnly() {
-  const { year, month, day } = datePartsInAppTimeZone(new Date());
+export function dateOnlyInTimeZone(date: Date, timeZone = appTimeZone) {
+  const { year, month, day } = datePartsInTimeZone(date, timeZone);
   return new Date(Date.UTC(year, month - 1, day));
+}
+
+export function todayDateOnly(timeZone = appTimeZone) {
+  return dateOnlyInTimeZone(new Date(), timeZone);
 }
 
 export function formatDate(date: Date | string | null | undefined) {

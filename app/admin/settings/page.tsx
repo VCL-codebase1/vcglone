@@ -19,6 +19,10 @@ export default async function SettingsPage() {
           <Field label="Work end"><Input name="workEndTime" type="time" defaultValue={policy?.workEndTime || "17:00"} required /></Field>
           <Field label="Grace minutes"><Input name="gracePeriodMinutes" type="number" defaultValue={policy?.gracePeriodMinutes || 15} min={0} /></Field>
           <Field label="Timezone"><Input name="timezone" defaultValue={policy?.timezone || "Africa/Lagos"} required /></Field>
+          <label className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 sm:col-span-2 xl:col-span-4">
+            <input type="checkbox" name="checkOutReminderEnabled" defaultChecked={policy?.checkOutReminderEnabled ?? true} className="mt-1" />
+            <span><span className="block text-sm font-semibold text-ink">Check-out reminders</span><span className="mt-1 block text-xs text-muted">Notify checked-in employees when the configured work end time is reached.</span></span>
+          </label>
           <div className="md:col-span-4">
             <p className="mb-2 text-sm font-medium text-ink">Working days</p>
             <div className="flex flex-wrap gap-3">

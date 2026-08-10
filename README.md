@@ -82,6 +82,7 @@ Required:
 - `AUTH_SECRET` optional alias; set it to the same value as `NEXTAUTH_SECRET` if your host expects Auth.js naming
 - `NEXTAUTH_URL`
 - `APP_URL`
+- `CRON_SECRET` protects scheduled reminder routes; use a random value of at least 16 characters
 - `NODE_ENV`
 - `SENTRY_DSN` optional
 - `NEXT_PUBLIC_SENTRY_DSN` optional
@@ -118,10 +119,11 @@ Avoid destructive resets in production. `npm run db:reset` is for local developm
 2. Add `DATABASE_URL` and `DIRECT_URL` to Vercel project environment variables.
 3. Add a strong `NEXTAUTH_SECRET`. In Vercel, also add `AUTH_SECRET` with the same value if you want compatibility with newer Auth.js naming.
 4. Set `NEXTAUTH_URL` and `APP_URL` to your production Vercel URL.
-5. Deploy to Vercel.
-6. Ensure the Vercel build runs `npm run build`, which generates Prisma Client before `next build`.
-7. Run `npm run prisma:deploy` against production before or during release.
-8. Confirm login, attendance, leave approval, admin dashboard, CSV export, and audit logs.
+5. Add a random `CRON_SECRET` of at least 16 characters for the attendance reminder scheduler.
+6. Deploy to Vercel. The checkout reminder cron in `vercel.json` runs every five minutes and requires a plan that supports sub-daily cron schedules.
+7. Ensure the Vercel build runs `npm run build`, which generates Prisma Client before `next build`.
+8. Run `npm run prisma:deploy` against production before or during release.
+9. Confirm login, attendance, checkout reminders, leave approval, admin dashboard, CSV export, and audit logs.
 
 All database routes and actions use Node.js runtime.
 

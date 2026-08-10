@@ -113,7 +113,8 @@ export async function submitAttendanceAction(input: unknown): Promise<ActionResu
     return { ok: false, message: "Add a note when location is unavailable." };
   }
 
-  const date = todayDateOnly();
+  const workPolicy = await prisma.workPolicy.findFirst({ select: { timezone: true } });
+  const date = todayDateOnly(workPolicy?.timezone);
   const now = new Date();
   const requiresReview = !hasLocation;
   const reviewReason = requiresReview ? "Location unavailable or permission denied." : null;
@@ -824,13 +825,14 @@ export async function createLeaveType(formData: FormData) {
 }
 
 export async function updateWorkPolicy(formData: FormData) {
-  const actor = await requireRole([Role.SUPER_ADMIN]);
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const parsed = workPolicySchema.parse({
     workStartTime: formString(formData, "workStartTime"),
     workEndTime: formString(formData, "workEndTime"),
     gracePeriodMinutes: formString(formData, "gracePeriodMinutes"),
     timezone: formString(formData, "timezone"),
-    workingDays: formData.getAll("workingDays").map(String)
+    workingDays: formData.getAll("workingDays").map(String),
+    checkOutReminderEnabled: formData.has("checkOutReminderEnabled")
   });
   const existing = await prisma.workPolicy.findFirst();
   const policy = existing

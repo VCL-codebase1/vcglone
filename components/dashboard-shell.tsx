@@ -7,6 +7,7 @@ import { LiveChatNotification, type ChatNotificationStatus } from "@/components/
 import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
+import { ensureCheckoutReminderForUser } from "@/lib/attendance-reminders";
 import { authOptions } from "@/lib/auth";
 import { getChatNotificationStatus } from "@/lib/chat";
 import { ensureBirthdayNotificationsForUser, getNotificationStatus } from "@/lib/notifications";
@@ -43,7 +44,8 @@ export async function DashboardShell({
   if (!session) redirect("/login");
   await Promise.all([
     ensureBirthdayNotificationsForUser({ id: session.user.id, role: session.user.role, firstName: session.user.firstName }),
-    ensureTaskRemindersForUser({ id: session.user.id, role: session.user.role })
+    ensureTaskRemindersForUser({ id: session.user.id, role: session.user.role }),
+    ensureCheckoutReminderForUser(session.user.id)
   ]);
   const [status, chatStatus] = await Promise.all([
     getNotificationStatus(session.user.id),

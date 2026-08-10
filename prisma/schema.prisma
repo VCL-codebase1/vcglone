@@ -231,6 +231,7 @@ model AttendanceRecord {
   checkOutNote      String?
   checkInUserAgent  String?
   checkOutUserAgent String?
+  checkOutReminderSentAt DateTime?
   status            AttendanceStatus @default(CHECKED_IN)
   totalMinutes      Int?
   requiresReview    Boolean          @default(false)
@@ -246,6 +247,7 @@ model AttendanceRecord {
 
   @@unique([employeeId, date])
   @@index([date])
+  @@index([date, checkOutTime, checkOutReminderSentAt])
   @@index([status])
   @@index([requiresReview])
 }
@@ -316,14 +318,15 @@ model LeaveRequest {
 }
 
 model WorkPolicy {
-  id                 String   @id @default(cuid())
-  workStartTime      String   @default("09:00")
-  workEndTime        String   @default("17:00")
-  gracePeriodMinutes Int      @default(15)
-  timezone           String   @default("Africa/Lagos")
-  workingDays        String[] @default(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"])
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  workStartTime           String   @default("09:00")
+  workEndTime             String   @default("17:00")
+  gracePeriodMinutes      Int      @default(15)
+  timezone                String   @default("Africa/Lagos")
+  workingDays             String[] @default(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"])
+  checkOutReminderEnabled Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
 
 model AuditLog {
