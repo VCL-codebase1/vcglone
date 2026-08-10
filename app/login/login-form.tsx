@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Eye, LockKeyhole, Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
@@ -15,7 +15,6 @@ import { loginSchema } from "@/lib/validators";
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,8 +44,15 @@ export function LoginForm() {
         return;
       }
       toast.success("Signed in");
-      router.push(response?.url || "/");
-      router.refresh();
+
+      // Start a fresh request after NextAuth sets the session cookie. A client-side
+      // transition can reuse the unauthenticated RSC response for `/` and make the
+      // post-login dashboard redirect appear to fail.
+      const destination = response?.url ? new URL(response.url, window.location.origin) : new URL("/", window.location.origin);
+      const sameOriginDestination = destination.origin === window.location.origin
+        ? `${destination.pathname}${destination.search}${destination.hash}`
+        : "/";
+      window.location.assign(sameOriginDestination);
     });
   }
 
