@@ -19,7 +19,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       type="button"
       className={cn(
-        "focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)] transition hover:-translate-y-0.5 hover:bg-surface dark:bg-panel dark:text-blue-200 dark:shadow-none",
+        "focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-brand transition hover:bg-surface dark:bg-panel dark:text-blue-200",
         className
       )}
       aria-label={mounted ? `Switch to ${isDark ? "light" : "dark"} mode` : "Toggle color mode"}

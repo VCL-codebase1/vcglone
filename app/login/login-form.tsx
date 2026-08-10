@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
 import { Eye, LockKeyhole, Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -57,12 +56,9 @@ export function LoginForm() {
   }
 
   return (
-    <motion.form
+    <form
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-5"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
     >
       {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-danger" role="alert">{error}</div> : null}
       <label className="block space-y-1.5 text-sm font-medium text-ink">
@@ -89,10 +85,10 @@ export function LoginForm() {
         </div>
         {errors.password ? <span className="block text-xs font-normal text-danger">{errors.password.message}</span> : null}
       </label>
-      <Button type="submit" className="h-11 w-full rounded-lg text-base shadow-[0_10px_24px_rgba(16,43,116,0.2)] sm:h-12" disabled={pending}>
+      <Button type="submit" className="h-11 w-full text-base sm:h-12" disabled={pending}>
         {pending ? "Signing in..." : "Sign in"}
       </Button>
-    </motion.form>
+    </form>
   );
 }
 

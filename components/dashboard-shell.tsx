@@ -65,18 +65,18 @@ export async function DashboardShell({
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/70 bg-white/85 px-4 py-5 shadow-[10px_0_40px_rgba(23,32,51,0.04)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-line bg-white px-4 py-5 dark:bg-panel lg:flex">
         <div className="shrink-0">
           <Link href="/" className="block rounded-2xl px-2 py-2 transition hover:bg-surface/70">
             <BrandLogo imageClassName="max-h-16 w-auto max-w-[13rem]" priority />
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
+            <p className="mt-1 text-xs font-medium text-muted">{area}</p>
           </Link>
         </div>
         <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pb-4 pr-1">
           {nav.map((item) => {
             const Icon = iconMap[item.icon];
             return (
-              <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-brandSoft hover:text-brand dark:text-muted dark:hover:text-blue-200">
+              <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-brandSoft hover:text-brand dark:text-muted dark:hover:text-blue-200">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-muted transition group-hover:bg-white group-hover:text-brand dark:group-hover:bg-panel dark:group-hover:text-blue-200">
                   <Icon className="h-4 w-4" aria-hidden />
                 </span>
@@ -85,7 +85,7 @@ export async function DashboardShell({
             );
           })}
         </nav>
-        <div className="mt-4 shrink-0 rounded-2xl border border-white/70 bg-gradient-to-br from-brandSoft to-white p-4 text-sm shadow-[0_12px_32px_rgba(23,32,51,0.06)] ring-1 ring-line/70 dark:border-line dark:shadow-none">
+        <div className="mt-4 shrink-0 rounded-xl border border-line bg-surface p-4 text-sm dark:bg-panel">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
@@ -103,13 +103,13 @@ export async function DashboardShell({
           </Link>
         </div>
       </aside>
-      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/90 px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] shadow-[0_8px_28px_rgba(23,32,51,0.05)] backdrop-blur-xl dark:border-line dark:bg-panel/90 dark:shadow-none sm:px-4 lg:hidden">
+      <header className="sticky top-0 z-10 border-b border-line bg-white px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] dark:bg-panel sm:px-4 lg:hidden">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <Link href="/" className="block">
               <BrandLogo imageClassName="h-9 w-auto max-w-[9.5rem]" priority />
             </Link>
-            <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
+            <p className="truncate text-xs font-medium text-muted">{area}</p>
           </div>
           <div className="flex shrink-0 items-center gap-1 min-[421px]:gap-2">
             <ThemeToggle className="max-[420px]:hidden" />
@@ -123,12 +123,12 @@ export async function DashboardShell({
               </DrawerTrigger>
               <DrawerContent title="Account">
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-line bg-gradient-to-br from-brandSoft to-white p-4 shadow-[0_10px_28px_rgba(23,32,51,0.05)]">
+                  <div className="rounded-xl border border-line bg-surface p-4">
                     <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
                     <p className="text-sm text-muted">{session.user.role.replace("_", " ")}</p>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-line bg-surface p-3">
-                    <div><p className="text-sm font-semibold text-ink">Appearance</p><p className="text-xs text-muted">Switch light or dark mode</p></div>
+                    <p className="text-sm font-semibold text-ink">Appearance</p>
                     <ThemeToggle />
                   </div>
                   <Link href="/api/auth/signout" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(180,83,9,0.16)]">

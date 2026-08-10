@@ -4,7 +4,6 @@ import { AttendanceLiveRefresh } from "@/components/attendance-live-refresh";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { DashboardMetricStrip, DashboardSectionHeader } from "@/components/dashboard-overview";
 import { TodayAttendanceDataTable } from "@/components/dashboard-tables";
-import { SystemPulse } from "@/components/system-pulse";
 import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
 import { Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { formatTime, todayDateOnly } from "@/lib/dates";
@@ -73,13 +72,8 @@ export default async function AdminDashboardPage() {
     <div className="space-y-5">
       <PageHeader
         title="Admin Dashboard"
-        description="Organization-wide attendance, leave, and workforce operations overview. Attendance updates automatically."
-        action={(
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <AttendanceLiveRefresh />
-            <SystemPulse />
-          </div>
-        )}
+        description="Attendance, leave, and employee activity."
+        action={<AttendanceLiveRefresh />}
       />
       {actor.role !== Role.SUPER_ADMIN ? (
         <AttendanceActionCard
@@ -125,5 +119,4 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-
 

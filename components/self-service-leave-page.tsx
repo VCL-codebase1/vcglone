@@ -29,7 +29,7 @@ export async function SelfServiceLeavePage({ applyHref = "/employee/leave/apply"
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {leaveCards.map(({ type, entitlementDays, usedDays, remainingDays, usedPercent }) => (
           <Card key={type.id} className="overflow-hidden p-0">
-            <div className="border-b border-line bg-gradient-to-br from-white to-brandSoft/60 p-4">
+            <div className="border-b border-line bg-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-ink">{type.name}</p>

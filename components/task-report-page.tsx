@@ -39,7 +39,7 @@ export async function TaskReportPage({ scope, searchParams }: { scope: ReportSco
     })
   ]);
   const title = scope === "mine" ? "My Task Reports" : scope === "team" ? "Team Task Analytics" : "Organization Task Analytics";
-  const description = scope === "mine" ? "Review and export your daily, weekly, or monthly delivery record." : scope === "team" ? "Analyze the whole team or select an individual team member." : "Compare task delivery across employees and departments.";
+  const description = scope === "mine" ? "Daily, weekly, and monthly task reports." : scope === "team" ? "Team task reports." : "Employee and department task reports.";
   const exportParams = new URLSearchParams({ scope, period: report.range.period, date: report.range.dateInput });
   if (searchParams?.employeeId) exportParams.set("employeeId", searchParams.employeeId);
   if (searchParams?.departmentId) exportParams.set("departmentId", searchParams.departmentId);
@@ -68,7 +68,7 @@ export async function TaskReportPage({ scope, searchParams }: { scope: ReportSco
         ["Completion rate", percent(report.metrics.completionRate), "Due work completed"],
         ["On-time rate", percent(report.metrics.onTimeRate), "Completed by deadline"],
         ["Avg. completion", duration(report.metrics.averageCompletionHours), "Start to approval"]
-      ].map(([label, value, detail]) => <Card key={String(label)} className="p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p><p className="mt-1 text-2xl font-semibold text-ink">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></Card>)}
+      ].map(([label, value, detail]) => <Card key={String(label)} className="p-4"><p className="text-sm font-medium text-muted">{label}</p><p className="mt-1 text-2xl font-semibold text-ink">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></Card>)}
     </div>
 
     <div className="grid gap-5 xl:grid-cols-2">
@@ -88,7 +88,7 @@ export async function TaskReportPage({ scope, searchParams }: { scope: ReportSco
           ["On time", percent(report.delegationMetrics.onTimeRate)],
           ["Avg. response", duration(report.delegationMetrics.averageResponseHours)],
           ["Avg. completion", duration(report.delegationMetrics.averageCompletionHours)]
-        ].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-surface p-3"><p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p><p className="mt-1 text-xl font-semibold text-ink">{value}</p></div>)}
+        ].map(([label, value]) => <div key={String(label)} className="rounded-lg bg-surface p-3"><p className="text-sm font-medium text-muted">{label}</p><p className="mt-1 text-xl font-semibold text-ink">{value}</p></div>)}
       </div>
       {report.delegatedSteps.length ? <Table><thead className="bg-surface text-left text-xs uppercase text-muted"><tr><th className="px-4 py-3">Task step</th><th className="px-4 py-3">Handoff</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Assigned</th><th className="px-4 py-3">Deadline</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-line">{report.delegatedSteps.slice(0, 100).map((step) => {
         const stepOverdue = step.dueAt < overdueNow && step.status !== TaskStepStatus.COMPLETED && step.status !== TaskStepStatus.CANCELLED;

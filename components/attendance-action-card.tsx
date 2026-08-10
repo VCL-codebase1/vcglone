@@ -106,7 +106,7 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
 
   return (
     <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-brand">Working time</p>
+      <p className="text-sm font-medium text-brand">Working time</p>
       <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{formatElapsedTime(elapsedSeconds)}</p>
       <p className="mt-1 text-sm text-muted">{isComplete ? "Final time recorded at check-out." : "Counting from your check-in time."}</p>
     </div>

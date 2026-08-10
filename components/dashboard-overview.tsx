@@ -21,7 +21,7 @@ export function DashboardMetricStrip({ metrics }: { metrics: DashboardMetric[] }
           const content = (
             <>
               <div className="flex items-start justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{metric.label}</p>
+                <p className="text-sm font-medium text-muted">{metric.label}</p>
                 {metric.href ? <ArrowUpRight className="h-4 w-4 shrink-0 text-muted transition group-hover:text-brand" aria-hidden /> : null}
               </div>
               <p className={cn("mt-2 text-2xl font-semibold tracking-tight text-ink", metric.attention && "text-warning")}>{metric.value}</p>

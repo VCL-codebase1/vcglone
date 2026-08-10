@@ -50,7 +50,7 @@ export default async function ManagerDashboardPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={`Good day, ${user.firstName}`} description="Team attendance and items that need your attention." />
+      <PageHeader title={`Good day, ${user.firstName}`} description="Team attendance and approvals." />
       {user.role !== Role.SUPER_ADMIN ? (
         <AttendanceActionCard
           compact

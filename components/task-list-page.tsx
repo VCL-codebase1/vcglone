@@ -70,10 +70,10 @@ export async function TaskListPage({
   const complete = metricTasks.filter((task) => task.status === TaskStatus.COMPLETED).length;
   const title = scope === "mine" ? "My Tasks" : scope === "team" ? "Team Tasks" : "Organization Tasks";
   const description = scope === "mine"
-    ? "Prioritize your work, raise blockers early, and submit completed work for review."
+    ? "Assigned tasks and deadlines."
     : scope === "team"
-      ? "Assign work, track progress, resolve blockers, and review completed tasks."
-      : "See workload, deadlines, blockers, and delivery across the organization.";
+      ? "Team tasks, deadlines, and reviews."
+      : "Organization tasks and deadlines.";
   const canCreate = scope !== "mine" && user.role !== Role.EMPLOYEE;
   const createHref = user.role === Role.MANAGER ? "/manager/tasks/new" : "/admin/tasks/new";
 
@@ -109,7 +109,7 @@ export async function TaskListPage({
           <div className="space-y-3 md:hidden">
             {tasks.map((task) => {
               const overdueTask = isTaskOverdue(task, now);
-              return <Link key={task.id} href={taskHref(user.role, task.id)} className="block"><Card className="space-y-3 transition hover:-translate-y-0.5 hover:border-brand/30">
+              return <Link key={task.id} href={taskHref(user.role, task.id)} className="block"><Card className="space-y-3 transition hover:border-brand/30">
                 <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-brand">{task.taskCode}</p><h2 className="mt-1 break-words font-semibold text-ink">{task.name}</h2></div><StatusBadge value={overdueTask ? "OVERDUE" : task.status} /></div>
                 <div className="grid grid-cols-2 gap-3 rounded-xl bg-surface p-3 text-sm"><div><p className="text-xs text-muted">Assignee</p><p className="font-medium text-ink">{task.assignee.firstName} {task.assignee.lastName}</p></div><div><p className="text-xs text-muted">Deadline</p><p className={overdueTask ? "font-semibold text-amber-700" : "font-medium text-ink"}>{formatDateTime(task.dueAt)}</p></div></div>
                 <div className="flex items-center justify-between text-xs text-muted"><span>{task.priority} priority</span><span>{task._count.resources} resources · {task._count.comments} comments</span></div>
