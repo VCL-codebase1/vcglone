@@ -12,6 +12,7 @@ The app is built for Vercel from day one with Next.js App Router, TypeScript, Ta
 - Location denial fallback: attendance can still be submitted with a required note and is marked Pending Review.
 - Duplicate check-in/check-out prevention and check-out-before-check-in prevention.
 - Admin attendance review with GPS coordinates, accuracy, timestamps, user agent, notes, manual adjustment, and audit logs.
+- HR dashboard attendance reviews are scoped to the current day.
 - Leave types, leave balances by employee/year, leave requests, manager/admin approvals, rejection comments, and balance deduction on approval.
 - Employee, department, work policy, report, CSV export, and audit log pages.
 
