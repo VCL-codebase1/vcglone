@@ -5,7 +5,6 @@ import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import { Button } from "@/components/ui";
 import { PwaRegister } from "@/components/pwa-register";
 
@@ -49,25 +48,23 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary FallbackComponent={AppFallback}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <PwaRegister />
-          {children}
-          <Toaster
-            closeButton
-            position="top-right"
-            toastOptions={{
-              duration: 5000,
-              style: {
-                fontFamily: "inherit",
-                padding: "14px 18px",
-                border: "1px solid var(--normal-border)",
-                background: "var(--normal-bg)",
-                color: "var(--normal-text)",
-                boxShadow: "var(--toast-shadow)"
-              }
-            }}
-          />
-        </ThemeProvider>
+        <PwaRegister />
+        {children}
+        <Toaster
+          closeButton
+          position="top-right"
+          toastOptions={{
+            duration: 5000,
+            style: {
+              fontFamily: "inherit",
+              padding: "14px 18px",
+              border: "1px solid var(--normal-border)",
+              background: "var(--normal-bg)",
+              color: "var(--normal-text)",
+              boxShadow: "var(--toast-shadow)"
+            }
+          }}
+        />
       </QueryClientProvider>
     </ErrorBoundary>
   );

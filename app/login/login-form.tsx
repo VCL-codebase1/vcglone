@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -58,34 +58,30 @@ export function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-5"
+      className="space-y-4"
     >
-      {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-danger" role="alert">{error}</div> : null}
-      <label className="block space-y-1.5 text-sm font-medium text-ink">
-        <span>Work email</span>
-        <div className="relative">
-          <Mail className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted" aria-hidden />
-          <Input className="h-11 rounded-lg border-slate-200 bg-slate-50 pl-10 transition focus:bg-white sm:h-12" type="email" autoComplete="email" placeholder="you@vcgl.com" aria-invalid={Boolean(errors.email)} {...register("email")} />
-        </div>
-        {errors.email ? <span className="block text-xs font-normal text-danger">{errors.email.message}</span> : null}
+      {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div> : null}
+      <label className="block">
+        <span className="sr-only">Work email</span>
+        <Input className="h-12 rounded-full border-transparent bg-[#f0f2f8] px-5 text-[#11194f] shadow-none placeholder:text-[#98a1b5] focus:border-[#a9bce7] focus:bg-[#f0f2f8]" type="email" autoComplete="email" placeholder="Work email" aria-invalid={Boolean(errors.email)} {...register("email")} />
+        {errors.email ? <span className="mt-1.5 block px-2 text-xs text-red-700">{errors.email.message}</span> : null}
       </label>
-      <label className="block space-y-1.5 text-sm font-medium text-ink">
-        <span>Password</span>
+      <label className="block">
+        <span className="sr-only">Password</span>
         <div className="relative">
-          <LockKeyhole className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted" aria-hidden />
-          <Input className="h-11 rounded-lg border-slate-200 bg-slate-50 px-10 transition focus:bg-white sm:h-12" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Enter your password" aria-invalid={Boolean(errors.password)} {...register("password")} />
+          <Input className="h-12 rounded-full border-transparent bg-[#f0f2f8] px-5 pr-12 text-[#11194f] shadow-none placeholder:text-[#98a1b5] focus:border-[#a9bce7] focus:bg-[#f0f2f8]" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Password" aria-invalid={Boolean(errors.password)} {...register("password")} />
           <button
             type="button"
             aria-label="Toggle password visibility"
-            className="focus-ring absolute right-2.5 top-2.5 rounded-md p-1.5 text-muted hover:bg-white hover:text-ink"
+            className="absolute right-3 top-2.5 rounded-full p-1.5 text-[#75809a] transition hover:bg-[#ffffff] hover:text-[#11194f] focus:outline-none focus:ring-2 focus:ring-[#284483]"
             onClick={() => setShowPassword((value) => !value)}
           >
-            <Eye className="h-4 w-4" aria-hidden />
+            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
           </button>
         </div>
-        {errors.password ? <span className="block text-xs font-normal text-danger">{errors.password.message}</span> : null}
+        {errors.password ? <span className="mt-1.5 block px-2 text-xs text-red-700">{errors.password.message}</span> : null}
       </label>
-      <Button type="submit" className="h-11 w-full text-base sm:h-12" disabled={pending}>
+      <Button type="submit" className="mt-2 h-12 w-full rounded-full bg-[#243a79] text-sm text-white hover:bg-[#172a63]" disabled={pending}>
         {pending ? "Signing in..." : "Sign in"}
       </Button>
     </form>

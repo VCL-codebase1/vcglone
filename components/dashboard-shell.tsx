@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { LiveChatNotification, type ChatNotificationStatus } from "@/components/live-chat-notification";
 import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { ensureCheckoutReminderForUser } from "@/lib/attendance-reminders";
 import { authOptions } from "@/lib/auth";
@@ -92,7 +91,6 @@ export async function DashboardShell({
               <p className="text-xs text-muted">{session.user.role.replace("_", " ")}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <ThemeToggle />
               <LiveChatNotification href={chatUrl} initialStatus={initialChatStatus} announce className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" />
               <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} announce className="focus-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand ring-1 ring-line transition hover:bg-brandSoft dark:bg-panel dark:text-blue-200" />
             </div>
@@ -112,7 +110,6 @@ export async function DashboardShell({
             <p className="truncate text-xs font-medium text-muted">{area}</p>
           </div>
           <div className="flex shrink-0 items-center gap-1 min-[421px]:gap-2">
-            <ThemeToggle className="max-[420px]:hidden" />
             <LiveChatNotification href={chatUrl} initialStatus={initialChatStatus} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)] dark:bg-panel dark:text-blue-200" />
             <LiveNotificationBell href={notificationUrl} initialStatus={initialNotificationStatus} className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-brand shadow-[0_8px_20px_rgba(23,32,51,0.04)]" />
             <Drawer>
@@ -126,10 +123,6 @@ export async function DashboardShell({
                   <div className="rounded-xl border border-line bg-surface p-4">
                     <p className="font-semibold text-ink">{session.user.firstName} {session.user.lastName}</p>
                     <p className="text-sm text-muted">{session.user.role.replace("_", " ")}</p>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl border border-line bg-surface p-3">
-                    <p className="text-sm font-semibold text-ink">Appearance</p>
-                    <ThemeToggle />
                   </div>
                   <Link href="/api/auth/signout" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(180,83,9,0.16)]">
                     <LogOut className="h-4 w-4" aria-hidden />
