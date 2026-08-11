@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, DialogContent } from "@/components/ui";
 import { roleChat, roleKnowledgeBase, roleTasks } from "@/lib/routes";
 
-const RELEASE_ID = "2026-08-productivity-tools-v3";
+const RELEASE_ID = "2026-08-productivity-tools-v4";
 
 function announcementKey(userId: string) {
   return `vcglone:announcement:${RELEASE_ID}:${userId}`;
@@ -38,6 +38,31 @@ function FeatureIllustration() {
         <BookOpen className="h-7 w-7" />
       </div>
       <Sparkles className="absolute left-[20%] top-[6%] h-8 w-8 text-brand/35" />
+    </div>
+  );
+}
+
+function MobileFeatureArtwork() {
+  return (
+    <div className="relative h-32 overflow-hidden bg-[#e2f3ff]" aria-hidden>
+      <span className="absolute left-[12%] top-5 h-3 w-3 rotate-45 rounded-sm bg-white/85" />
+      <span className="absolute right-[18%] top-8 h-5 w-5 rotate-45 rounded-md bg-white/70" />
+      <Sparkles className="absolute left-[27%] top-4 h-5 w-5 text-brand/30" />
+
+      <div className="absolute -bottom-9 left-1/2 h-28 w-48 -translate-x-1/2 rounded-[1.75rem] bg-[#78b9e1] shadow-[0_18px_38px_rgba(36,58,121,0.14)]">
+        <div className="absolute left-1/2 top-[-2.2rem] flex h-[5.2rem] w-[6.6rem] -translate-x-1/2 items-center justify-center rounded-2xl border border-white/80 bg-white shadow-[0_12px_28px_rgba(31,45,89,0.12)]">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brandSoft text-brand ring-[7px] ring-[#eff8fe]">
+            <Rocket className="h-6 w-6" strokeWidth={1.8} />
+          </span>
+        </div>
+      </div>
+
+      <span className="absolute bottom-4 left-[15%] flex h-10 w-10 -rotate-6 items-center justify-center rounded-xl bg-white text-brand shadow-[0_10px_24px_rgba(31,45,89,0.11)]">
+        <MessageSquare className="h-[1.1rem] w-[1.1rem]" />
+      </span>
+      <span className="absolute bottom-7 right-[13%] flex h-11 w-11 rotate-6 items-center justify-center rounded-xl bg-brand text-white shadow-[0_12px_26px_rgba(36,58,121,0.2)]">
+        <ListChecks className="h-5 w-5" />
+      </span>
     </div>
   );
 }
@@ -113,15 +138,18 @@ export function NewFeaturesAnnouncement({
         className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl overscroll-contain rounded-[1.5rem] p-0 sm:max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:rounded-[1.75rem] sm:p-0"
       >
         <div className="grid lg:min-h-[580px] lg:grid-cols-[1.02fr_0.98fr]">
-          <section className="flex flex-col p-5 pt-6 sm:p-9 lg:p-11">
+          <section className="lg:hidden">
+            <MobileFeatureArtwork />
+          </section>
+
+          <section className="flex flex-col p-5 sm:p-9 lg:p-11">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brandSoft px-2.5 py-1 text-[11px] font-semibold text-brand sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs">
-                <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
-                New in vcglOne
-              </span>
-              <h2 className="mt-4 max-w-[17rem] pr-8 text-[1.35rem] font-semibold leading-[1.18] tracking-tight text-ink sm:mt-5 sm:max-w-none sm:pr-0 sm:text-3xl">More ways to get work done</h2>
+              <h2 className="max-w-[17rem] text-[1.35rem] font-semibold leading-[1.18] tracking-tight text-ink sm:max-w-none sm:text-3xl">
+                <span className="sm:hidden">Three new ways to work</span>
+                <span className="hidden sm:inline">More ways to get work done</span>
+              </h2>
               <p className="mt-2 max-w-xl text-sm leading-5 text-muted sm:mt-3 sm:text-base sm:leading-6">
-                <span className="sm:hidden">Hi {firstName}, three useful new tools are ready for you.</span>
+                <span className="sm:hidden">Hi {firstName}, here’s a quick look at the latest tools.</span>
                 <span className="hidden sm:inline">Hi {firstName}, chat, employee task management, and the company Knowledge Base are now available.</span>
               </p>
             </div>
@@ -148,11 +176,10 @@ export function NewFeaturesAnnouncement({
               ))}
             </div>
 
-            <div className="mt-auto grid grid-cols-2 gap-2 pt-5 sm:pt-7">
-              <Button asChild className="min-h-10 px-3 py-2 sm:min-h-11 sm:px-5 sm:py-2.5">
+            <div className="mt-auto pt-5 sm:pt-7">
+              <Button asChild className="min-h-10 w-full px-4 py-2 sm:min-h-11 sm:px-5 sm:py-2.5">
                 <Link href={chatHref} onClick={rememberDismissal}>Open chat</Link>
               </Button>
-              <Button type="button" variant="secondary" className="min-h-10 px-3 py-2 sm:min-h-11 sm:px-5 sm:py-2.5" onClick={rememberDismissal}>Got it</Button>
             </div>
           </section>
 

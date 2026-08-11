@@ -33,7 +33,7 @@ export function DialogContent({
       >
         {title ? <DialogPrimitive.Title className={visuallyHiddenHeader ? "sr-only" : "text-lg font-semibold text-ink"}>{title}</DialogPrimitive.Title> : null}
         {description ? <DialogPrimitive.Description className={visuallyHiddenHeader ? "sr-only" : "mt-1 text-sm text-muted"}>{description}</DialogPrimitive.Description> : null}
-        <DialogPrimitive.Close className="focus-ring absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-muted transition hover:bg-brandSoft hover:text-brand">
+        <DialogPrimitive.Close className="focus-ring absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-muted transition hover:bg-brandSoft hover:text-brand">
           <X className="h-4 w-4" aria-hidden />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
