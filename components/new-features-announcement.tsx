@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, DialogContent } from "@/components/ui";
 import { roleChat, roleKnowledgeBase, roleTasks } from "@/lib/routes";
 
-const RELEASE_ID = "2026-08-productivity-tools-v1";
+const RELEASE_ID = "2026-08-productivity-tools-v3";
 
 function announcementKey(userId: string) {
   return `vcglone:announcement:${RELEASE_ID}:${userId}`;
@@ -86,19 +86,19 @@ export function NewFeaturesAnnouncement({
   const features = [
     {
       title: "Team chat",
-      description: "Send direct messages, create group conversations, and share files with coworkers.",
+      description: "Message coworkers, create groups, and share files.",
       href: chatHref,
       Icon: MessageSquare
     },
     {
       title: "Employee task management",
-      description: "Employees can create tasks, manage deadlines, and submit completed work for review.",
+      description: "Create personal tasks, track deadlines, and submit work for review.",
       href: tasksHref,
       Icon: ListChecks
     },
     {
       title: "Knowledge Base",
-      description: "Find company SOPs, policies, rules, guides, and other documents published by HR.",
+      description: "Access company SOPs, policies, rules, and guides from HR.",
       href: knowledgeHref,
       Icon: BookOpen
     }
@@ -110,48 +110,49 @@ export function NewFeaturesAnnouncement({
         title="New tools are now available"
         description="An announcement for chat, employee task management, and the company Knowledge Base."
         visuallyHiddenHeader
-        className="max-h-[92vh] max-w-5xl overflow-hidden p-0 sm:p-0"
+        className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl overscroll-contain rounded-[1.5rem] p-0 sm:max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:rounded-[1.75rem] sm:p-0"
       >
-        <div className="grid lg:min-h-[610px] lg:grid-cols-[1.02fr_0.98fr]">
-          <section className="flex flex-col p-6 sm:p-9 lg:p-11">
+        <div className="grid lg:min-h-[580px] lg:grid-cols-[1.02fr_0.98fr]">
+          <section className="flex flex-col p-5 pt-6 sm:p-9 lg:p-11">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-brandSoft px-3 py-1.5 text-xs font-semibold text-brand">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brandSoft px-2.5 py-1 text-[11px] font-semibold text-brand sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs">
+                <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden />
                 New in vcglOne
               </span>
-              <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">More ways to get work done</h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-muted sm:text-base">
-                Hi {firstName}, chat, employee task management, and the company Knowledge Base are now available.
+              <h2 className="mt-4 max-w-[17rem] pr-8 text-[1.35rem] font-semibold leading-[1.18] tracking-tight text-ink sm:mt-5 sm:max-w-none sm:pr-0 sm:text-3xl">More ways to get work done</h2>
+              <p className="mt-2 max-w-xl text-sm leading-5 text-muted sm:mt-3 sm:text-base sm:leading-6">
+                <span className="sm:hidden">Hi {firstName}, three useful new tools are ready for you.</span>
+                <span className="hidden sm:inline">Hi {firstName}, chat, employee task management, and the company Knowledge Base are now available.</span>
               </p>
             </div>
 
-            <div className="mt-7 space-y-2">
+            <div className="mt-4 space-y-1 sm:mt-7 sm:space-y-2">
               {features.map(({ title, description, href, Icon }) => (
                 <Link
                   key={title}
                   href={href}
                   onClick={rememberDismissal}
-                  className="focus-ring group flex items-start gap-3 rounded-2xl p-3 transition hover:bg-[#f4f8fc]"
+                  className="focus-ring group flex items-center gap-3 rounded-xl px-2 py-2.5 transition duration-200 hover:bg-[#f4f8fc] active:scale-[0.99] sm:items-start sm:rounded-2xl sm:p-3"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brandSoft text-brand transition group-hover:bg-[#d5ebfb]">
-                    <Icon className="h-5 w-5" aria-hidden />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brandSoft text-brand transition group-hover:bg-[#d5ebfb] sm:h-11 sm:w-11 sm:rounded-2xl">
+                    <Icon className="h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-ink">{title}</span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand" aria-hidden />
+                      <span className="text-sm font-semibold text-ink sm:text-base">{title}</span>
+                      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand sm:h-4 sm:w-4" aria-hidden />
                     </span>
-                    <span className="mt-1 block text-sm leading-5 text-muted">{description}</span>
+                    <span className="mt-0.5 block text-xs leading-[1.1rem] text-muted sm:mt-1 sm:text-sm sm:leading-5">{description}</span>
                   </span>
                 </Link>
               ))}
             </div>
 
-            <div className="mt-auto grid gap-2 pt-7 sm:grid-cols-2">
-              <Button asChild>
-                <Link href={chatHref} onClick={rememberDismissal}>Start with chat</Link>
+            <div className="mt-auto grid grid-cols-2 gap-2 pt-5 sm:pt-7">
+              <Button asChild className="min-h-10 px-3 py-2 sm:min-h-11 sm:px-5 sm:py-2.5">
+                <Link href={chatHref} onClick={rememberDismissal}>Open chat</Link>
               </Button>
-              <Button type="button" variant="secondary" onClick={rememberDismissal}>Got it</Button>
+              <Button type="button" variant="secondary" className="min-h-10 px-3 py-2 sm:min-h-11 sm:px-5 sm:py-2.5" onClick={rememberDismissal}>Got it</Button>
             </div>
           </section>
 
