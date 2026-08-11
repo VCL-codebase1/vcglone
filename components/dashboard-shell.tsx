@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { LiveChatNotification, type ChatNotificationStatus } from "@/components/live-chat-notification";
 import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
+import { NewFeaturesAnnouncement } from "@/components/new-features-announcement";
 import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui";
 import { ensureCheckoutReminderForUser } from "@/lib/attendance-reminders";
 import { authOptions } from "@/lib/auth";
@@ -64,6 +65,11 @@ export async function DashboardShell({
 
   return (
     <div className="min-h-screen min-w-0 bg-transparent">
+      <NewFeaturesAnnouncement
+        userId={session.user.id}
+        firstName={session.user.firstName}
+        role={session.user.role}
+      />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/80 bg-[#dff2ff] px-4 py-5 lg:flex">
         <div className="shrink-0">
           <Link href="/" className="block rounded-2xl bg-white/65 px-3 py-3 transition hover:bg-white">

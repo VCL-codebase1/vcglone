@@ -24,6 +24,12 @@ export function roleTasks(role?: Role | string | null) {
   return "/employee/tasks";
 }
 
+export function roleKnowledgeBase(role?: Role | string | null) {
+  if (role === "SUPER_ADMIN" || role === "HR_ADMIN") return "/admin/knowledge-base";
+  if (role === "MANAGER") return "/manager/knowledge-base";
+  return "/employee/knowledge-base";
+}
+
 export function roleAttendance(role?: Role | string | null) {
   if (role === "SUPER_ADMIN" || role === "HR_ADMIN") return "/admin/my-attendance";
   if (role === "MANAGER") return "/manager/my-attendance";
