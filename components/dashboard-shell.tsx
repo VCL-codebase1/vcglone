@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { BirthdayCelebrationModal } from "@/components/birthday-celebration-modal";
 import { LiveChatNotification, type ChatNotificationStatus } from "@/components/live-chat-notification";
 import { LiveNotificationBell, type NotificationStatus } from "@/components/live-notification-bell";
 import { NewFeaturesAnnouncement } from "@/components/new-features-announcement";
@@ -10,7 +11,8 @@ import { Button, Drawer, DrawerContent, DrawerTrigger, Sheet, SheetClose, SheetC
 import { ensureCheckoutReminderForUser } from "@/lib/attendance-reminders";
 import { authOptions } from "@/lib/auth";
 import { getChatNotificationStatus } from "@/lib/chat";
-import { ensureBirthdayNotificationsForUser, getNotificationStatus } from "@/lib/notifications";
+import { todayDateOnly } from "@/lib/dates";
+import { ensureBirthdayNotificationsForUser, getNotificationStatus, getTodaysBirthdayCelebrants } from "@/lib/notifications";
 import { roleChat, roleNotifications } from "@/lib/routes";
 import { ensureTaskRemindersForUser } from "@/lib/task-reminders";
 
@@ -43,8 +45,10 @@ export async function DashboardShell({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+  const today = todayDateOnly();
+  const birthdayCelebrants = await getTodaysBirthdayCelebrants();
   await Promise.all([
-    ensureBirthdayNotificationsForUser({ id: session.user.id, role: session.user.role, firstName: session.user.firstName }),
+    ensureBirthdayNotificationsForUser({ id: session.user.id, role: session.user.role, firstName: session.user.firstName }, birthdayCelebrants),
     ensureTaskRemindersForUser({ id: session.user.id, role: session.user.role }),
     ensureCheckoutReminderForUser(session.user.id)
   ]);
@@ -69,6 +73,17 @@ export async function DashboardShell({
         userId={session.user.id}
         firstName={session.user.firstName}
         role={session.user.role}
+      />
+      <BirthdayCelebrationModal
+        viewerId={session.user.id}
+        role={session.user.role}
+        dateKey={today.toISOString().slice(0, 10)}
+        celebrants={birthdayCelebrants.map((person) => ({
+          id: person.id,
+          firstName: person.firstName,
+          lastName: person.lastName,
+          department: person.department?.name || null
+        }))}
       />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/80 bg-[#dff2ff] px-4 py-5 lg:flex">
         <div className="shrink-0">

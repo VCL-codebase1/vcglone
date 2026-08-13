@@ -91,26 +91,41 @@ function listNames(people: Array<{ firstName: string; lastName: string }>) {
   return `${names.slice(0, 2).join(", ")} and ${names.length - 2} more`;
 }
 
-export async function ensureBirthdayNotificationsForUser(user: { id: string; role: Role | string; firstName: string }) {
-  const today = todayDateOnly();
-  const duplicateWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+export type BirthdayCelebrant = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: Date | null;
+  department: { name: string } | null;
+};
 
-  const birthdays = (await prisma.user.findMany({
+export async function getTodaysBirthdayCelebrants(): Promise<BirthdayCelebrant[]> {
+  const today = todayDateOnly();
+  return (await prisma.user.findMany({
     where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
-    select: { id: true, firstName: true, lastName: true, dateOfBirth: true },
+    select: { id: true, firstName: true, lastName: true, dateOfBirth: true, department: { select: { name: true } } },
     orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
   })).filter((person) => dateMatchesToday(person.dateOfBirth, today));
+}
 
-  if (!birthdays.length) return;
+export async function ensureBirthdayNotificationsForUser(
+  user: { id: string; role: Role | string; firstName: string },
+  birthdays?: BirthdayCelebrant[]
+) {
+  const today = todayDateOnly();
+  const duplicateWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const todaysBirthdays = birthdays || await getTodaysBirthdayCelebrants();
 
-  const ownBirthday = birthdays.find((person) => person.id === user.id);
-  const teammates = birthdays.filter((person) => person.id !== user.id);
+  if (!todaysBirthdays.length) return;
+
+  const ownBirthday = todaysBirthdays.find((person) => person.id === user.id);
+  const teammates = todaysBirthdays.filter((person) => person.id !== user.id);
   const title = ownBirthday ? `Happy birthday, ${user.firstName}` : "Today's birthdays";
   const message = ownBirthday
     ? teammates.length
       ? `Wishing you a wonderful birthday. Also celebrating ${listNames(teammates)} today.`
       : `Wishing you a wonderful birthday today, ${formatMonthDay(ownBirthday.dateOfBirth)}.`
-    : `Celebrate ${listNames(birthdays)} today, ${formatMonthDay(birthdays[0]?.dateOfBirth)}.`;
+    : `Celebrate ${listNames(todaysBirthdays)} today, ${formatMonthDay(todaysBirthdays[0]?.dateOfBirth)}.`;
 
   const existing = await prisma.notification.findFirst({
     where: {
