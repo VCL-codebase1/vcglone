@@ -23,7 +23,7 @@ export default async function AdminLeaveRequestsPage({ searchParams }: { searchP
   return (
     <div className="space-y-6">
       <PageHeader title="Leave Requests" description="Review and decide employee leave requests." action={<LinkButton href={`/api/reports/leave?${query}`} variant="secondary">Download report</LinkButton>} />
-      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 xl:grid-cols-4">
+      <form className="workspace-toolbar grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>
         <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="type" defaultValue={searchParams.type || ""}><option value="">All leave types</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select>
         <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option>{Object.values(LeaveRequestStatus).map((status) => <option key={status}>{status}</option>)}</select>

@@ -3,7 +3,7 @@ import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { DashboardMetricStrip, DashboardSectionHeader } from "@/components/dashboard-overview";
 import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
-import { Card, EmptyState, LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
+import { EmptyState, LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/rbac";
@@ -81,10 +81,10 @@ export default async function ManagerDashboardPage() {
                 ))}
               </tbody>
             </Table>
-          ) : <Card><EmptyState title="No team check-ins yet" description="Today’s team attendance will appear here." /></Card>}
+          ) : <EmptyState title="No team check-ins yet" description="Today’s team attendance will appear here." />}
         </section>
         <div className="space-y-5">
-          <Card className="space-y-4">
+          <section className="space-y-4 border-t border-line pt-5">
             <div>
               <h2 className="font-semibold text-ink">Needs attention</h2>
               <p className="mt-0.5 text-sm text-muted">Items that may require follow-up.</p>
@@ -94,7 +94,7 @@ export default async function ManagerDashboardPage() {
               <div className="flex items-center justify-between gap-4 p-3"><div><p className="text-sm font-semibold text-ink">Not checked in</p><p className="text-xs text-muted">Excludes approved leave</p></div><span className="text-xl font-semibold text-ink">{notCheckedIn}</span></div>
             </div>
             <LinkButton href="/manager/leave-approvals" variant="secondary" className="w-full">Review approvals</LinkButton>
-          </Card>
+          </section>
           <BirthdaysThisMonthCard birthdays={birthdayRows} limit={3} />
         </div>
       </div>

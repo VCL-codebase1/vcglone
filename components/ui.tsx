@@ -15,3 +15,4 @@ export { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/
 export { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 export { Skeleton } from "@/components/ui/skeleton";
+export { MetricStrip, PageToolbar, WorkspaceSection } from "@/components/ui/workspace";

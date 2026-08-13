@@ -82,7 +82,7 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
         )}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 border-y border-line py-3 sm:grid-cols-3 xl:grid-cols-5">
         <StatCard label="Checked in" value={checkedIn} />
         <StatCard label="Currently checked in" value={currentlyCheckedIn} />
         <StatCard label="Checked out" value={checkedOut} />
@@ -90,7 +90,7 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
         <StatCard label="Pending review" value={pendingReview} />
       </div>
 
-      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 lg:grid-cols-4">
+      <form className="workspace-toolbar grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <input
           className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm"
           type="search"

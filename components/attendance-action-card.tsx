@@ -244,7 +244,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
 
   if (compact) {
     return (
-      <Card className="space-y-4">
+      <section className="space-y-4 border-b border-line pb-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="rounded-xl bg-brandSoft p-2.5 text-brand">
@@ -276,7 +276,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
           </div>
         ) : null}
         {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      </Card>
+      </section>
     );
   }
 

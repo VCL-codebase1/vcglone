@@ -53,7 +53,7 @@ export default async function AdminAttendancePage({ searchParams }: { searchPara
           </div>
         )}
       />
-      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+      <form className="workspace-toolbar grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="from" defaultValue={searchParams.from} />
         <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="to" defaultValue={searchParams.to} />
         <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="employee" defaultValue={searchParams.employee || ""}><option value="">All employees</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select>

@@ -4,7 +4,7 @@ import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { EmployeeDashboardActivity } from "@/components/employee-dashboard-activity";
 import { LiveClock } from "@/components/live-clock";
 import { TaskDashboardPanel } from "@/components/task-dashboard-panel";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { formatDate, formatTime, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/rbac";
@@ -58,7 +58,7 @@ export default async function EmployeeDashboardPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={`Good day, ${user.firstName}`} description={format(new Date(), "EEEE, MMMM d, yyyy")} action={<div className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ink shadow-soft dark:bg-panel"><LiveClock /></div>} />
+      <PageHeader title={`Good day, ${user.firstName}`} description={format(new Date(), "EEEE, MMMM d, yyyy")} action={<div className="border-l border-line px-3 py-1 text-sm font-semibold text-ink"><LiveClock /></div>} />
       <AttendanceActionCard
         compact
         status={status}
@@ -72,7 +72,7 @@ export default async function EmployeeDashboardPage() {
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <EmployeeDashboardActivity attendance={attendanceActivity} leave={leaveActivity} />
         <div className="space-y-5">
-          <Card className="space-y-3">
+          <section className="space-y-3 border-t border-line pt-5">
             <div>
               <h2 className="font-semibold text-ink">Leave balances</h2>
               <p className="mt-0.5 text-sm text-muted">Available days this year.</p>
@@ -91,7 +91,7 @@ export default async function EmployeeDashboardPage() {
                 })}
               </div>
             ) : <EmptyState title="No leave balances" description="Your available leave will appear here." />}
-          </Card>
+          </section>
           <BirthdaysThisMonthCard birthdays={birthdayRows} limit={3} />
         </div>
       </div>

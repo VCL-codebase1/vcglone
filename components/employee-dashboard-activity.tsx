@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, EmptyState, StatusBadge, Table } from "@/components/ui";
+import { EmptyState, StatusBadge, Table } from "@/components/ui";
 import { DashboardSectionHeader } from "@/components/dashboard-overview";
 
 type AttendanceRow = {
@@ -25,7 +25,7 @@ export function EmployeeDashboardActivity({ attendance, leave }: { attendance: A
   const isAttendance = activeTab === "attendance";
 
   return (
-    <Card className="space-y-4">
+    <section className="workspace-section space-y-4">
       <DashboardSectionHeader
         title="Recent activity"
         description="Your latest attendance and leave updates."
@@ -73,6 +73,6 @@ export function EmployeeDashboardActivity({ attendance, leave }: { attendance: A
           </tbody>
         </Table>
       ) : <EmptyState title="No leave requests" description="Your leave applications will appear here." />}
-    </Card>
+    </section>
   );
 }

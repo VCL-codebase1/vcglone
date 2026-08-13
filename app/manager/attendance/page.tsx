@@ -21,7 +21,7 @@ export default async function ManagerAttendancePage({ searchParams }: { searchPa
   return (
     <div className="space-y-6">
       <PageHeader title="Team Attendance" description="Attendance records for assigned team members." />
-      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-2 xl:grid-cols-4">
+      <form className="workspace-toolbar grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="from" defaultValue={searchParams.from} />
         <input className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" type="date" name="to" defaultValue={searchParams.to} />
         <select className="focus-ring min-h-11 w-full min-w-0 rounded-full border border-transparent bg-surface px-4 text-sm" name="status" defaultValue={searchParams.status || ""}><option value="">All statuses</option><option value="CHECKED_IN">Checked in</option><option value="CHECKED_OUT">Checked out</option><option value="PENDING_REVIEW">Pending review</option></select>

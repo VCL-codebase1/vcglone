@@ -745,7 +745,7 @@ export function ChatWorkspace({ currentUser }: { currentUser: { id: string; name
   return (
     <>
     <section
-      className="relative -mx-3 -my-5 grid h-[calc(100dvh_-_4.75rem_-_env(safe-area-inset-top))] min-h-0 overflow-hidden border-y border-line bg-white shadow-[0_20px_55px_rgba(31,45,89,0.1)] sm:mx-0 sm:my-0 sm:h-[calc(100dvh_-_6.5rem_-_env(safe-area-inset-top))] sm:rounded-[1.75rem] sm:border md:h-[calc(100dvh_-_13rem_-_env(safe-area-inset-top))] md:max-h-[900px] lg:h-[calc(100dvh-13rem)] lg:min-h-[640px] lg:grid-cols-[minmax(300px,360px)_1fr]"
+      className="relative -mx-3 -my-5 grid h-[calc(100dvh_-_4.75rem_-_env(safe-area-inset-top))] min-h-0 overflow-hidden border-y border-line bg-white sm:mx-0 sm:my-0 sm:h-[calc(100dvh_-_6.5rem_-_env(safe-area-inset-top))] md:h-[calc(100dvh_-_13rem_-_env(safe-area-inset-top))] md:max-h-[900px] lg:h-[calc(100dvh-13rem)] lg:min-h-[640px] lg:grid-cols-[minmax(300px,360px)_1fr]"
       onDragEnter={(event) => { event.preventDefault(); setIsDraggingFiles(true); }}
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDraggingFiles(false); }}

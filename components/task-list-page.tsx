@@ -1,6 +1,6 @@
 import { Prisma, Role, TaskPriority, TaskStatus } from "@prisma/client";
 import Link from "next/link";
-import { Card, EmptyState, LinkButton, PageHeader, Select, StatusBadge, Table } from "@/components/ui";
+import { Card, EmptyState, LinkButton, MetricStrip, PageHeader, PageToolbar, Select, StatusBadge, Table } from "@/components/ui";
 import { formatDateTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/rbac";
@@ -80,19 +80,15 @@ export async function TaskListPage({
   return (
     <div className="space-y-5">
       <PageHeader title={departmentId ? `${departments.find((item) => item.id === departmentId)?.name || "Department"} Tasks` : title} description={description} action={canCreate ? <LinkButton href={createHref}>{user.role === Role.EMPLOYEE ? "Create task" : "Delegate task"}</LinkButton> : undefined} />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
+      <MetricStrip items={[
           ["Active", active, "Open work"],
           ["In review", inReview, "Needs a decision"],
           ["Overdue", overdue, "Past deadline"],
           ["Completed", complete, "Manager approved"]
-        ].map(([label, count, detail]) => (
-          <Card key={String(label)} className="p-4"><p className="text-sm font-medium text-muted">{label}</p><p className="mt-1 text-2xl font-semibold text-ink">{count}</p><p className="text-xs text-muted">{detail}</p></Card>
-        ))}
-      </div>
-      <Card className="p-4">
+        ].map(([label, value, detail]) => ({ label: String(label), value, detail: String(detail), attention: label === "Overdue" && Number(value) > 0 }))} />
+      <PageToolbar>
         <form className={`grid gap-3 ${scope === "mine" ? "md:grid-cols-[minmax(180px,1fr)_180px_160px_auto]" : "md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_180px_160px_200px_auto]"}`}>
-          <input name="q" defaultValue={q} placeholder="Search task, ID, or employee" className="focus-ring min-h-11 rounded-full border border-transparent bg-surface px-4 text-sm text-ink" />
+          <input name="q" defaultValue={q} placeholder="Search task, ID, or employee" className="workspace-control" />
           <Select name="status" defaultValue={status || ""}>
             <option value="">All statuses</option><option value="OVERDUE">Overdue</option>
             {Object.values(TaskStatus).map((item) => <option key={item} value={item}>{item.replace(/_/g, " ")}</option>)}
@@ -101,9 +97,9 @@ export async function TaskListPage({
             <option value="">All priorities</option>{Object.values(TaskPriority).map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
           {scope !== "mine" ? <Select name="departmentId" defaultValue={departmentId || ""}><option value="">All departments</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</Select> : null}
-          <button className="focus-ring min-h-11 rounded-full bg-brand px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)]">Apply filters</button>
+          <button className="workspace-action">Apply filters</button>
         </form>
-      </Card>
+      </PageToolbar>
       {tasks.length ? (
         <>
           <div className="space-y-3 md:hidden">

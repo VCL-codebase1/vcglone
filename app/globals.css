@@ -5,17 +5,17 @@
 :root {
   --color-ink: 17 25 79;
   --color-muted: 96 111 139;
-  --color-line: 220 227 239;
-  --color-surface: 238 242 248;
+  --color-line: 226 230 237;
+  --color-surface: 246 247 249;
   --color-panel: 255 255 255;
   --color-brand: 36 58 121;
-  --color-brand-soft: 225 240 252;
+  --color-brand-soft: 238 243 251;
   --color-success: 4 120 87;
   --color-warning: 180 83 9;
   --color-danger: 180 35 24;
   --toast-shadow: 0 14px 36px rgba(31, 45, 89, 0.1);
   color-scheme: light;
-  background: #e3e7f0;
+  background: #ffffff;
 }
 
 * {
@@ -30,7 +30,7 @@ body {
   min-height: 100vh;
   margin: 0;
   color: rgb(var(--color-ink));
-  background: #e3e7f0;
+  background: #ffffff;
 }
 
 ::selection {
@@ -51,7 +51,7 @@ thead {
 }
 
 thead tr {
-  background: #eef4f9;
+  background: #f7f8fa;
 }
 
 tbody tr {
@@ -59,7 +59,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: #f6f9fc;
+  background: #f8fafc;
 }
 
 input[type="date"] {
@@ -78,7 +78,38 @@ input[type="date"]::-webkit-date-and-time-value {
 
 @layer components {
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-brand/80 focus:ring-offset-2 focus:ring-offset-surface;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand/70 focus:ring-offset-2 focus:ring-offset-white;
+  }
+
+  .workspace-toolbar {
+    @apply border-y border-line bg-surface/60 px-0 py-3;
+  }
+
+  .workspace-section {
+    @apply min-w-0 border-t border-line pt-6;
+  }
+
+  .workspace-control {
+    @apply focus-ring min-h-10 min-w-0 rounded-lg border border-line bg-white px-3 text-sm text-ink transition hover:border-slate-300 focus:border-brand/40;
+  }
+
+  .workspace-action {
+    @apply focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#182a63];
+  }
+
+  .workspace-toolbar input,
+  .workspace-toolbar select {
+    min-height: 2.5rem;
+    border: 1px solid rgb(var(--color-line));
+    border-radius: 0.5rem;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .workspace-toolbar button {
+    min-height: 2.5rem;
+    border-radius: 0.5rem;
+    box-shadow: none;
   }
 }
 

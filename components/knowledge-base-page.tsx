@@ -2,7 +2,7 @@ import { Download, FileSpreadsheet, FileText, Search, Upload } from "lucide-reac
 import Link from "next/link";
 import { KnowledgeDocumentActions } from "@/components/knowledge-document-actions";
 import { KnowledgeUploadForm } from "@/components/knowledge-upload-form";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { Card, EmptyState, PageHeader, PageToolbar, WorkspaceSection } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { formatFileSize, KNOWLEDGE_CATEGORIES } from "@/lib/knowledge-base";
 import { prisma } from "@/lib/prisma";
@@ -37,38 +37,41 @@ export async function KnowledgeBasePage({ admin, searchParams }: { admin: boolea
       />
 
       {admin ? (
-        <Card className="overflow-hidden p-0">
-          <div className="flex items-center gap-3 border-b border-line px-5 py-4 sm:px-6">
+        <WorkspaceSection title="Upload document" description="Publish policies, procedures, guides, and company resources for staff.">
+          <div className="hidden items-center gap-3 border-b border-line px-5 py-4 sm:px-6">
             <Upload className="h-5 w-5 text-brand" />
             <h2 className="font-semibold text-ink">Upload document</h2>
           </div>
-          <div className="p-5 sm:p-6"><KnowledgeUploadForm /></div>
-        </Card>
+          <div><KnowledgeUploadForm /></div>
+        </WorkspaceSection>
       ) : null}
 
-      <form className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-line sm:grid-cols-[minmax(0,1fr)_minmax(220px,320px)_auto]">
-        <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted" /><input name="search" defaultValue={searchParams.search} className="focus-ring min-h-11 w-full rounded-full border border-transparent bg-surface pl-10 pr-4 text-sm text-ink" placeholder="Search documents…" /></label>
-        <select name="category" defaultValue={searchParams.category || ""} className="focus-ring min-h-11 rounded-full border border-transparent bg-surface px-4 text-sm text-ink"><option value="">All categories</option>{KNOWLEDGE_CATEGORIES.map((item) => <option key={item}>{item}</option>)}</select>
-        <button className="min-h-11 rounded-full bg-brand px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.16)] transition hover:bg-[#1c316e]">Apply</button>
-      </form>
+      <PageToolbar><form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,320px)_auto]">
+        <label className="relative block"><Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-muted" /><input name="search" defaultValue={searchParams.search} className="workspace-control w-full pl-10" placeholder="Search documents…" /></label>
+        <select name="category" defaultValue={searchParams.category || ""} className="workspace-control"><option value="">All categories</option>{KNOWLEDGE_CATEGORIES.map((item) => <option key={item}>{item}</option>)}</select>
+        <button className="workspace-action">Apply</button>
+      </form></PageToolbar>
 
       {documents.length ? (
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="divide-y divide-line border-y border-line">
           {documents.map((document) => {
             const Icon = documentIcon(document.mimeType);
             return (
-              <Card key={document.id} className="group flex min-w-0 flex-col gap-4 border-line/80 transition duration-200 hover:border-brand/30 hover:shadow-[0_12px_28px_rgba(23,32,51,0.07)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brandSoft text-brand"><Icon className="h-5 w-5" /></span>
-                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-medium text-muted">{document.category}</p>{admin && !document.published ? <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Draft</span> : null}</div><h2 className="mt-1 break-words font-semibold leading-6 text-ink">{document.title}</h2></div>
+              <article key={document.id} className="group grid min-w-0 gap-3 py-4 transition hover:bg-surface/60 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brandSoft text-brand"><Icon className="h-5 w-5" /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><p className="text-xs font-medium text-muted">{document.category}</p>{admin && !document.published ? <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Draft</span> : null}</div>
+                    <h2 className="mt-1 break-words font-semibold leading-6 text-ink">{document.title}</h2>
+                  {document.description ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{document.description}</p> : null}
+                  <p className="mt-2 truncate text-xs text-muted">{document.fileName} · {formatFileSize(document.size)} · Added {formatDate(document.createdAt)} by {document.uploader.firstName} {document.uploader.lastName}</p>
+                  </div>
                 </div>
-                {document.description ? <p className="line-clamp-3 text-sm leading-5 text-muted">{document.description}</p> : null}
-                <div className="mt-auto border-t border-line pt-3 text-xs text-muted"><p className="truncate">{document.fileName}</p><p className="mt-1">{formatFileSize(document.size)} · Added {formatDate(document.createdAt)} by {document.uploader.firstName} {document.uploader.lastName}</p></div>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Link href={`/api/knowledge-base/documents/${document.id}`} target="_blank" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(36,58,121,0.14)] transition hover:bg-[#1c316e]"><Download className="h-4 w-4" />Open document</Link>
+                <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                  <Link href={`/api/knowledge-base/documents/${document.id}`} target="_blank" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brandSoft"><Download className="h-4 w-4" />Open</Link>
                   {admin ? <KnowledgeDocumentActions id={document.id} published={document.published} /> : null}
                 </div>
-              </Card>
+              </article>
             );
           })}
         </div>

@@ -1,5 +1,5 @@
 import { Cake, Gift } from "lucide-react";
-import { Card, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { formatMonthDay, todayDateOnly } from "@/lib/dates";
 
 type BirthdayPerson = {
@@ -21,10 +21,10 @@ export function BirthdaysThisMonthCard({ birthdays, limit = 3 }: { birthdays: Bi
   });
 
   return (
-    <Card className="h-fit self-start space-y-3 overflow-hidden">
+    <section className="h-fit self-start space-y-3 border-t border-line pt-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brandSoft text-brand">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brandSoft text-brand">
             <Cake className="h-5 w-5" aria-hidden />
           </span>
           <div>
@@ -58,6 +58,6 @@ export function BirthdaysThisMonthCard({ birthdays, limit = 3 }: { birthdays: Bi
           {sorted.length > limit ? <p className="pt-3 text-xs font-medium text-muted">+{sorted.length - limit} more birthday{sorted.length - limit === 1 ? "" : "s"} this month</p> : null}
         </div>
       ) : <EmptyState title="No birthdays this month" description="Birthdays will appear here when employees add their date of birth." />}
-    </Card>
+    </section>
   );
 }
