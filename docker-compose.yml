@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vcglone-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vcglone
+      POSTGRES_PASSWORD: vcglone
+      POSTGRES_DB: vcglone
+    ports:
+      - "5432:5432"
+    volumes:
+      - vcglone_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vcglone -d vcglone"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vcglone_pgdata:

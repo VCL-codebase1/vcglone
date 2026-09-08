@@ -14,7 +14,10 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "push:keys": "web-push generate-vapid-keys",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:teardown": "docker compose down -v"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

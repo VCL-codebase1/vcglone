@@ -38,33 +38,61 @@ The app is built for Vercel from day one with Next.js App Router, TypeScript, Ta
 
 ## Local Setup
 
-1. Install dependencies:
+### 1. Start a local PostgreSQL with Docker (optional but recommended)
+
+The app ships with `docker-compose.yml` for a git-agnostic, local-only PostgreSQL
+database. The data volume is stored on your machine and never committed.
+
+```bash
+npm run db:up       # start the local Postgres container
+```
+
+To stop the container but keep your data:
+
+```bash
+npm run db:down
+```
+
+To stop and delete all local data (fresh start):
+
+```bash
+npm run db:teardown
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-2. Create your environment file:
+### 3. Create your environment file
+
+Copy `.env.example` to `.env` and confirm the local connection strings:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Add `DATABASE_URL`. Add `DIRECT_URL` if your provider has a separate direct connection string.
+For the Docker database above, `DATABASE_URL` and `DIRECT_URL` should point at:
 
-4. Run migrations:
+```
+DATABASE_URL="postgresql://vcglone:vcglone@localhost:5432/vcglone"
+DIRECT_URL="postgresql://vcglone:vcglone@localhost:5432/vcglone"
+```
+
+### 4. Run migrations
 
 ```bash
 npm run prisma:migrate
 ```
 
-5. Set the `BOOTSTRAP_SUPER_ADMIN_*` variables, then create the first Super Admin:
+### 5. Set the `BOOTSTRAP_SUPER_ADMIN_*` variables, then create the first Super Admin
 
 ```bash
 npm run prisma:seed
 ```
 
-6. Start the dev server:
+### 6. Start the dev server
 
 ```bash
 npm run dev
