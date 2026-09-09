@@ -1,10 +1,12 @@
 import { EmploymentStatus, Role } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { resetUserPassword, updateEmployee } from "@/lib/actions";
+import { EmployeeDeleteAction } from "@/components/employee-delete-action";
 import { EmployeeProfileFields } from "@/components/employee-profile-fields";
 import { compactDuration, formatDate, formatTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { canManageAccountRole, requireRole } from "@/lib/rbac";
+import { FORMER_EMPLOYEE_EMAIL } from "@/lib/employees";
 import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Table } from "@/components/ui";
 
 export const runtime = "nodejs";
@@ -22,11 +24,11 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
     prisma.leaveRequest.findMany({ where: { employeeId: params.id }, include: { leaveType: true }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.leaveBalance.findMany({ where: { employeeId: params.id }, include: { leaveType: true } })
   ]);
-  if (!employee) notFound();
+  if (!employee || employee.email === FORMER_EMPLOYEE_EMAIL) notFound();
   if (!canManageAccountRole(actor.role, employee.role)) notFound();
   return (
     <div className="space-y-6">
-      <PageHeader title={`${employee.firstName} ${employee.lastName}`} description="Employee profile, attendance history, leave history, and leave balances." />
+      <PageHeader title={`${employee.firstName} ${employee.lastName}`} description="Employee profile, attendance history, leave history, and leave balances." action={<EmployeeDeleteAction employeeId={employee.id} employeeName={`${employee.firstName} ${employee.lastName}`} />} />
       <form action={updateEmployee} className="grid gap-6 md:grid-cols-2">
         <Card className="grid gap-4 md:col-span-2 md:grid-cols-2">
           <div className="md:col-span-2"><h2 className="text-base font-semibold text-ink">Employment and hierarchy</h2></div>

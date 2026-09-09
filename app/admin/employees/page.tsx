@@ -4,13 +4,14 @@ import { LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
+import { visibleEmployeeWhere } from "@/lib/employees";
 
 export const runtime = "nodejs";
 
 export default async function EmployeesPage() {
   const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
   const employees = await prisma.user.findMany({
-    where: actor.role === Role.HR_ADMIN ? { role: { in: [Role.EMPLOYEE, Role.MANAGER] } } : undefined,
+    where: actor.role === Role.HR_ADMIN ? { AND: [{ role: { in: [Role.EMPLOYEE, Role.MANAGER] } }, visibleEmployeeWhere()] } : visibleEmployeeWhere(),
     include: { department: true, manager: true },
     orderBy: [{ firstName: "asc" }]
   });

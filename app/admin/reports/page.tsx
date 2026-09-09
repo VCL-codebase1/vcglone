@@ -1,5 +1,6 @@
 import { LinkButton, PageHeader, StatCard } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
+import { visibleEmployeeWhere } from "@/lib/employees";
 
 export const runtime = "nodejs";
 
@@ -7,7 +8,7 @@ export default async function ReportsPage() {
   const [attendance, leave, employees, pendingReview] = await Promise.all([
     prisma.attendanceRecord.count(),
     prisma.leaveRequest.count(),
-    prisma.user.count(),
+    prisma.user.count({ where: visibleEmployeeWhere() }),
     prisma.attendanceRecord.count({ where: { requiresReview: true } })
   ]);
   return (

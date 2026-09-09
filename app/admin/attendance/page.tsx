@@ -4,6 +4,7 @@ import { AttendanceLiveRefresh } from "@/components/attendance-live-refresh";
 import { LinkButton, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { compactDuration, formatDate, formatTime } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { visibleEmployeeWhere } from "@/lib/employees";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,7 @@ export default async function AdminAttendancePage({ searchParams }: { searchPara
       orderBy: { date: "desc" },
       take: 200
     }),
-    prisma.user.findMany({ orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
+    prisma.user.findMany({ where: visibleEmployeeWhere(), orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
     prisma.department.findMany({ orderBy: { name: "asc" } })
   ]);
   const recordDates = records.map((record) => record.date.getTime());

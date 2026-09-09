@@ -2,6 +2,7 @@ import { LeaveRequestStatus, Role } from "@prisma/client";
 import { decideLeaveRequest } from "@/lib/actions";
 import { formatDate } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { visibleEmployeeWhere } from "@/lib/employees";
 import { Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge, Table, Textarea } from "@/components/ui";
 import { requireRole } from "@/lib/rbac";
 
@@ -16,7 +17,7 @@ export default async function AdminLeaveRequestsPage({ searchParams }: { searchP
       orderBy: { createdAt: "desc" },
       take: 200
     }),
-    prisma.user.findMany({ orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
+    prisma.user.findMany({ where: visibleEmployeeWhere(), orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
     prisma.leaveType.findMany({ orderBy: { name: "asc" } })
   ]);
   const query = new URLSearchParams(searchParams as Record<string, string>).toString();

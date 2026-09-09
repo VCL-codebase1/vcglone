@@ -1,11 +1,12 @@
 "use server";
 
-import { AttendanceStatus, LeaveRequestStatus, Role } from "@prisma/client";
+import { AttendanceStatus, LeaveRequestStatus, Role, TaskStatus, TaskStepStatus } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAuditLog } from "@/lib/audit";
 import { countWorkingDays, minutesBetween, todayDateOnly } from "@/lib/dates";
+import { FORMER_EMPLOYEE_EMAIL } from "@/lib/employees";
 import { createNotification, generalNotificationWhere } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/push-notifications";
@@ -30,6 +31,11 @@ export type EmployeeCreateActionState = {
   status: "idle" | "error";
   message?: string;
   fieldErrors?: Record<string, string>;
+};
+
+export type DeleteEmployeeActionState = {
+  status: "idle" | "error";
+  message?: string;
 };
 
 function formString(formData: FormData, key: string) {
@@ -676,6 +682,103 @@ export async function updateEmployee(formData: FormData) {
   });
   await notifyActionCompleted(actor.id, "Account updated", `${updated.firstName} ${updated.lastName}'s account was updated successfully.`, `/admin/employees/${updated.id}`);
   revalidatePath(`/admin/employees/${id}`);
+}
+
+export async function deleteEmployee(
+  _previousState: DeleteEmployeeActionState,
+  formData: FormData
+): Promise<DeleteEmployeeActionState> {
+  const actor = await requireRole([Role.HR_ADMIN, Role.SUPER_ADMIN]);
+  const id = formString(formData, "id");
+  const confirmation = formString(formData, "confirmation");
+
+  if (!id) return { status: "error", message: "The employee record could not be identified." };
+  if (confirmation !== "DELETE") return { status: "error", message: "Enter DELETE exactly to confirm this action." };
+
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, firstName: true, lastName: true, email: true, role: true }
+  });
+  if (!target) return { status: "error", message: "This employee record no longer exists." };
+  if (target.id === actor.id || target.email === FORMER_EMPLOYEE_EMAIL || target.role === Role.SUPER_ADMIN) {
+    return { status: "error", message: "This protected account cannot be deleted." };
+  }
+  if (!canManageAccountRole(actor.role, target.role)) {
+    return { status: "error", message: "You do not have permission to delete this account." };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const deletedAt = new Date();
+      const formerEmployee = await tx.user.upsert({
+        where: { email: FORMER_EMPLOYEE_EMAIL },
+        update: { employmentStatus: "INACTIVE" },
+        create: {
+          firstName: "Former",
+          lastName: "Employee",
+          email: FORMER_EMPLOYEE_EMAIL,
+          passwordHash: "!disabled-system-account!",
+          role: Role.EMPLOYEE,
+          employmentStatus: "INACTIVE"
+        },
+        select: { id: true }
+      });
+
+      await tx.task.updateMany({
+        where: { assigneeId: target.id, status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CANCELLED] } },
+        data: { assigneeId: formerEmployee.id, status: TaskStatus.CANCELLED, cancelledAt: deletedAt }
+      });
+      await tx.task.updateMany({
+        where: { assigneeId: target.id },
+        data: { assigneeId: formerEmployee.id }
+      });
+      await tx.task.updateMany({ where: { assignedById: target.id }, data: { assignedById: formerEmployee.id } });
+      await tx.taskStep.updateMany({
+        where: { assigneeId: target.id, status: { notIn: [TaskStepStatus.COMPLETED, TaskStepStatus.CANCELLED] } },
+        data: { assigneeId: formerEmployee.id, status: TaskStepStatus.CANCELLED }
+      });
+      await tx.taskStep.updateMany({ where: { assigneeId: target.id }, data: { assigneeId: formerEmployee.id } });
+      await tx.taskStep.updateMany({ where: { assignedById: target.id }, data: { assignedById: formerEmployee.id } });
+      await tx.taskResource.updateMany({ where: { uploaderId: target.id }, data: { uploaderId: formerEmployee.id } });
+      await tx.taskComment.updateMany({ where: { authorId: target.id }, data: { authorId: formerEmployee.id } });
+      await tx.chatMessage.updateMany({ where: { senderId: target.id }, data: { senderId: formerEmployee.id } });
+      await tx.knowledgeDocument.updateMany({ where: { uploaderId: target.id }, data: { uploaderId: formerEmployee.id } });
+
+      await tx.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "EMPLOYEE_DELETED",
+          entityType: "User",
+          entityId: target.id,
+          metadata: {
+            employeeName: `${target.firstName} ${target.lastName}`,
+            employeeEmail: target.email,
+            role: target.role,
+            operationalHistoryReassignedTo: formerEmployee.id
+          }
+        }
+      });
+
+      await tx.user.delete({ where: { id: target.id } });
+    }, { maxWait: 10_000, timeout: 30_000 });
+  } catch (error) {
+    console.error("Employee deletion failed", error);
+    return { status: "error", message: "The employee record could not be deleted. No partial changes were saved." };
+  }
+
+  try {
+    await notifyActionCompleted(actor.id, "Employee record deleted", `${target.firstName} ${target.lastName}'s employee record was permanently deleted.`, "/admin/employees");
+  } catch (error) {
+    console.error("Employee deletion notification failed", error);
+  }
+  revalidatePath("/admin/employees");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/attendance");
+  revalidatePath("/admin/leave-requests");
+  revalidatePath("/admin/tasks");
+  revalidatePath("/admin/task-reports");
+  revalidatePath("/admin/knowledge-base");
+  redirect("/admin/employees");
 }
 
 export async function resetUserPassword(formData: FormData) {
