@@ -22,7 +22,11 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
       include: { department: true },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
     }),
-    prisma.attendanceRecord.findMany({ where: { date: today } }),
+    prisma.attendanceRecord.findMany({
+      where: { date: today, checkInTime: { not: null }, employee: { role: { not: Role.SUPER_ADMIN } } },
+      include: { employee: { include: { department: true } } },
+      orderBy: { checkInTime: "desc" }
+    }),
     prisma.leaveRequest.findMany({
       where: { status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } },
       include: { leaveType: true }
@@ -30,14 +34,13 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
     prisma.department.findMany({ orderBy: { name: "asc" } })
   ]);
 
-  const attendanceByEmployee = new Map(attendanceRecords.map((record) => [record.employeeId, record]));
   const leaveByEmployee = new Map(approvedLeave.map((request) => [request.employeeId, request]));
   const normalizedSearch = searchParams.search?.trim().toLowerCase() || "";
 
-  const rows = employees
-    .map((employee) => {
-      const attendance = attendanceByEmployee.get(employee.id);
-      const leave = leaveByEmployee.get(employee.id);
+  const rows = attendanceRecords
+    .map((attendance) => {
+      const employee = attendance.employee;
+      const leave = leaveByEmployee.get(attendance.employeeId);
       const statusCategory = leave
         ? "on-leave"
         : attendance?.requiresReview
@@ -49,7 +52,6 @@ export default async function TodayAttendancePage({ searchParams }: { searchPara
             : "not-checked-in";
       return { employee, attendance, leave, statusCategory };
     })
-    .filter(({ attendance }) => Boolean(attendance?.checkInTime))
     .filter(({ employee, statusCategory }) => {
       const matchesSearch = !normalizedSearch || [employee.firstName, employee.lastName, employee.employeeId, employee.email]
         .filter(Boolean)
