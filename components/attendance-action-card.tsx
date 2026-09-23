@@ -14,6 +14,7 @@ type Props = {
   totalMinutes?: number | null;
   status?: string;
   compact?: boolean;
+  onActionSuccess?: (action: "check-in" | "check-out") => void;
 };
 
 async function resolvePlaceName(coords: GeolocationCoordinates) {
@@ -130,7 +131,7 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
   );
 }
 
-export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes, status, compact = false }: Props) {
+export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes, status, compact = false, onActionSuccess }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
@@ -155,6 +156,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
           userAgent: navigator.userAgent
         });
         if (result.ok) {
+          if (nextAction !== "done") onActionSuccess?.(nextAction);
           setMessage(result.message);
           setNote("");
           setLocationUnavailable(false);

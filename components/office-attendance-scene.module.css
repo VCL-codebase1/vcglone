@@ -1,0 +1,92 @@
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 390px;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: #f8fafc;
+}
+
+.scene svg { width: 100%; height: 100%; display: block; }
+.eveningWash, .closedLaptop, .departingEmployee { opacity: 0; }
+.windowLight, .seatedEmployee, .arrivingEmployee, .departingEmployee, .openLaptop, .closedLaptop { transition: opacity 420ms ease; }
+
+.scene[data-state="before-check-in"] .seatedEmployee { opacity: 0; }
+.scene[data-state="before-check-in"] .arrivingEmployee { opacity: 1; animation: morningApproach 13s ease-in-out infinite; }
+.scene[data-state="before-check-in"] .passingColleague { opacity: .18; }
+
+.scene[data-state="checked-in"] .arrivingEmployee,
+.scene[data-state="checked-out"] .arrivingEmployee { opacity: 0; }
+.scene[data-state="checked-in"] .seatedEmployee { opacity: 1; }
+.scene[data-state="checked-in"] .typingHands { animation: typingPause 5.8s ease-in-out infinite; transform-origin: 297px 250px; }
+.scene[data-state="checked-in"] .passingColleague { animation: colleaguePass 18s ease-in-out infinite; }
+.scene[data-state="checked-in"] .boardArm { animation: boardGesture 12s ease-in-out infinite; transform-origin: 691px 128px; }
+
+.scene[data-state="checked-out"] .seatedEmployee,
+.scene[data-state="checked-out"] .openLaptop,
+.scene[data-state="checked-out"] .passingColleague { opacity: 0; }
+.scene[data-state="checked-out"] .closedLaptop,
+.scene[data-state="checked-out"] .eveningWash { opacity: 1; }
+.scene[data-state="checked-out"] .windowLight { opacity: .58; }
+.scene[data-state="checked-out"] .boardColleague { opacity: .35; }
+.scene[data-state="checked-out"] .lampGlow { opacity: .55; }
+
+.scene[data-transition="arriving"] .arrivingEmployee { animation: arriveAtDesk 1.75s cubic-bezier(.22, 1, .36, 1) both; }
+.scene[data-transition="arriving"] .seatedEmployee { animation: settleAtDesk 1.75s ease both; }
+.scene[data-transition="leaving"] .seatedEmployee { animation: riseFromDesk 1.8s ease both; }
+.scene[data-transition="leaving"] .openLaptop { animation: closeComputer .65s ease both; }
+.scene[data-transition="leaving"] .closedLaptop { animation: revealClosedComputer .65s ease both; }
+.scene[data-transition="leaving"] .departingEmployee { animation: leaveOffice 2.2s cubic-bezier(.42, 0, .58, 1) .45s both; }
+
+.plantLeaves { animation: plantSway 10s ease-in-out infinite; transform-origin: 690px 241px; }
+.cloud { animation: cloudDrift 20s ease-in-out infinite; }
+
+.scene[data-paused="true"] * { animation-play-state: paused !important; }
+
+@keyframes typingPause {
+  0%, 18%, 30%, 48%, 60%, 100% { transform: translateX(0); }
+  21%, 51% { transform: translateX(-2px); }
+  24%, 54% { transform: translateX(2px); }
+  27%, 57% { transform: translateX(-1px); }
+}
+
+@keyframes colleaguePass {
+  0%, 58% { opacity: 0; transform: translateX(-150px); }
+  62% { opacity: .82; }
+  76% { opacity: .82; }
+  81%, 100% { opacity: 0; transform: translateX(250px); }
+}
+
+@keyframes boardGesture {
+  0%, 25%, 38%, 100% { transform: rotate(0); }
+  29% { transform: rotate(-8deg); }
+  33% { transform: rotate(5deg); }
+}
+
+@keyframes plantSway {
+  0%, 20%, 45%, 70%, 100% { transform: rotate(0); }
+  26% { transform: rotate(1.5deg); }
+  51% { transform: rotate(-1.2deg); }
+}
+
+@keyframes cloudDrift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(9px); } }
+@keyframes morningApproach { 0%, 12%, 100% { transform: translateX(-9px); } 4% { transform: translateX(0); } 8% { transform: translateX(-3px); } }
+@keyframes arriveAtDesk { 0% { opacity: 0; transform: translateX(-95px); } 18% { opacity: 1; } 82% { opacity: 1; transform: translateX(135px); } 100% { opacity: 0; transform: translateX(150px); } }
+@keyframes settleAtDesk { 0%, 74% { opacity: 0; transform: translateY(-4px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes riseFromDesk { 0% { opacity: 1; transform: translateY(0); } 42%, 100% { opacity: 0; transform: translateY(-8px); } }
+@keyframes closeComputer { 0% { opacity: 1; transform: scaleY(1); transform-origin: 300px 274px; } 100% { opacity: 0; transform: scaleY(.1); transform-origin: 300px 274px; } }
+@keyframes revealClosedComputer { 0%, 72% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes leaveOffice { 0% { opacity: 0; transform: translateX(-35px); } 15% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; transform: translateX(185px); } }
+
+@media (max-width: 639px) {
+  .scene { min-height: 245px; }
+  .scene svg { width: 145%; max-width: none; transform: translateX(-22%); }
+  .whiteboardArea, .boardColleague, .backDesk { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene * { animation: none !important; transition: none !important; }
+  .scene[data-transition="arriving"] .arrivingEmployee,
+  .scene[data-transition="leaving"] .departingEmployee { opacity: 0; }
+}

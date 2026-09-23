@@ -1,5 +1,5 @@
-import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
+import { EmployeeAttendanceExperience } from "@/components/employee-attendance-experience";
 import { PageHeader } from "@/components/ui";
 import { formatDate, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +24,7 @@ export default async function EmployeeDashboardPage() {
   ]);
   const birthdayRows = birthdays.filter((person) => person.dateOfBirth?.getUTCMonth() === today.getUTCMonth());
   const nextAction = record?.checkInTime ? record.checkOutTime ? "done" : "check-out" : "check-in";
+  const attendanceState = record?.checkOutTime ? "checked-out" : record?.checkInTime ? "checked-in" : "before-check-in";
   const location = record?.checkOutPlaceName || record?.checkInPlaceName
     || (record?.checkOutLatitude != null ? `${record.checkOutLatitude}, ${record.checkOutLongitude}`
       : record?.checkInLatitude != null ? `${record.checkInLatitude}, ${record.checkInLongitude}` : undefined);
@@ -31,7 +32,8 @@ export default async function EmployeeDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={`Welcome back, ${user.firstName}`} description={formatDate(today)} />
-      <AttendanceActionCard
+      <EmployeeAttendanceExperience
+        attendanceState={attendanceState}
         status={leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN"}
         nextAction={nextAction}
         lastLocation={location}
