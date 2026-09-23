@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { OfficeAttendanceScene, type OfficeAttendanceState, type OfficeAttendanceTransition } from "@/components/office-attendance-scene";
+import styles from "@/components/office-attendance-scene.module.css";
 
 type Props = {
   attendanceState: OfficeAttendanceState;
@@ -32,12 +33,9 @@ export function EmployeeAttendanceExperience(props: Props) {
   }
 
   return (
-    <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
-      <section className="order-1 min-h-0 overflow-hidden rounded-3xl border border-white bg-white p-2">
-        <OfficeAttendanceScene state={props.attendanceState} transition={transition} />
-      </section>
-      <div className="order-2">
+    <div className={styles.experience}>
         <AttendanceActionCard
+          illustration={<div className={styles.illustration}><OfficeAttendanceScene state={props.attendanceState} transition={transition} /></div>}
           nextAction={props.nextAction}
           lastLocation={props.lastLocation}
           checkedInAt={props.checkedInAt}
@@ -46,7 +44,6 @@ export function EmployeeAttendanceExperience(props: Props) {
           status={props.status}
           onActionSuccess={handleActionSuccess}
         />
-      </div>
     </div>
   );
 }

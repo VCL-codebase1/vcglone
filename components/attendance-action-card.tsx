@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock, LocateFixed, LogIn, LogOut, MapPin, MapPinOff } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { toast } from "@/lib/toast";
 import { submitAttendanceAction } from "@/lib/actions";
 import { Button, Dialog, DialogClose, DialogContent, DialogTrigger, StatusBadge, Textarea } from "@/components/ui";
@@ -14,6 +14,7 @@ type Props = {
   totalMinutes?: number | null;
   status?: string;
   compact?: boolean;
+  illustration?: ReactNode;
   onActionSuccess?: (action: "check-in" | "check-out") => void;
 };
 
@@ -131,7 +132,7 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
   );
 }
 
-export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes, status, compact = false, onActionSuccess }: Props) {
+export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, checkedOutAt, totalMinutes, status, compact = false, onActionSuccess, illustration }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState("");
@@ -300,8 +301,8 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   }
 
   return (
-    <section className="flex h-full flex-col rounded-3xl border border-white bg-white px-4 py-5 sm:px-6 sm:py-6">
-      <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+    <section data-attendance-card className="flex h-full flex-col rounded-3xl border border-white bg-white px-4 py-5 sm:px-6 sm:py-6">
+      <div data-attendance-heading className="flex items-start justify-between gap-4 border-b border-line pb-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">Today&apos;s attendance</p>
           <h2 className="mt-1 text-lg font-semibold text-ink">
@@ -311,9 +312,10 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
         {status ? <StatusBadge value={status} /> : null}
       </div>
 
-      <WorkingTimeCounter checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} />
+      {illustration}
+      <div data-attendance-timer><WorkingTimeCounter checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} /></div>
 
-      <div className="my-5 grid grid-cols-2 divide-x divide-line border-y border-line py-4 text-center">
+      <div data-attendance-times className="my-5 grid grid-cols-2 divide-x divide-line border-y border-line py-4 text-center">
         <div className="px-3">
           <p className="text-xs font-medium text-muted">Check in</p>
           <p className="mt-1 text-lg font-semibold text-ink tabular-nums">{dashboardTime(checkedInAt)}</p>
@@ -331,8 +333,8 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
         </div>
       ) : null}
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      <div className="mt-5">{actionDialog}</div>
-      <div className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
+      <div data-attendance-action className="mt-5">{actionDialog}</div>
+      <div data-attendance-location className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
         {lastLocation ? <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden /> : <LocateFixed className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />}
         <p>{lastLocation ? `Last recorded location: ${lastLocation}` : "Your location is captured only when you submit attendance. Continuous tracking is never used."}</p>
       </div>
