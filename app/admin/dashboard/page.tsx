@@ -1,5 +1,5 @@
 import { Role } from "@prisma/client";
-import { AttendanceActionCard } from "@/components/attendance-action-card";
+import { AttendanceExperience } from "@/components/attendance-experience";
 import { AttendanceLiveRefresh } from "@/components/attendance-live-refresh";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { DashboardMetricStrip } from "@/components/dashboard-overview";
@@ -27,6 +27,7 @@ export default async function AdminDashboardPage() {
   ]);
   const birthdayRows = birthdays.filter((person) => person.dateOfBirth?.getUTCMonth() === today.getUTCMonth());
   const nextAction = selfAttendance?.checkInTime ? selfAttendance.checkOutTime ? "done" : "check-out" : "check-in";
+  const attendanceState = selfAttendance?.checkOutTime ? "checked-out" : selfAttendance?.checkInTime ? "checked-in" : "before-check-in";
   const location = selfAttendance?.checkOutPlaceName || selfAttendance?.checkInPlaceName
     || (selfAttendance?.checkOutLatitude != null ? `${selfAttendance.checkOutLatitude}, ${selfAttendance.checkOutLongitude}`
       : selfAttendance?.checkInLatitude != null ? `${selfAttendance.checkInLatitude}, ${selfAttendance.checkInLongitude}` : undefined);
@@ -41,7 +42,8 @@ export default async function AdminDashboardPage() {
         { label: "Pending review today", value: pendingReview, attention: pendingReview > 0 }
       ]} />
       {actor.role !== Role.SUPER_ADMIN ? (
-        <AttendanceActionCard status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
+        <AttendanceExperience attendanceState={attendanceState}
+          status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
           lastLocation={location} checkedInAt={selfAttendance?.checkInTime?.toISOString()}
           checkedOutAt={selfAttendance?.checkOutTime?.toISOString()} totalMinutes={selfAttendance?.totalMinutes} />
       ) : null}

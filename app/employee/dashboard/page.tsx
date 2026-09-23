@@ -1,5 +1,5 @@
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
-import { EmployeeAttendanceExperience } from "@/components/employee-attendance-experience";
+import { AttendanceExperience } from "@/components/attendance-experience";
 import { PageHeader } from "@/components/ui";
 import { formatDate, todayDateOnly } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +32,7 @@ export default async function EmployeeDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={`Welcome back, ${user.firstName}`} description={formatDate(today)} />
-      <EmployeeAttendanceExperience
+      <AttendanceExperience
         attendanceState={attendanceState}
         status={leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN"}
         nextAction={nextAction}

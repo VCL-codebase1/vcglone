@@ -16,7 +16,7 @@ type Props = {
   status?: string;
 };
 
-export function EmployeeAttendanceExperience(props: Props) {
+export function AttendanceExperience(props: Props) {
   const router = useRouter();
   const [transition, setTransition] = useState<OfficeAttendanceTransition>(null);
   const transitionTimer = useRef<number | null>(null);
