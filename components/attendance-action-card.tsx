@@ -1,10 +1,10 @@
 "use client";
 
-import { Clock, LocateFixed, MapPinOff } from "lucide-react";
+import { CheckCircle2, Clock, LocateFixed, LogIn, LogOut, MapPin, MapPinOff } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "@/lib/toast";
 import { submitAttendanceAction } from "@/lib/actions";
-import { Button, Card, Dialog, DialogClose, DialogContent, DialogTrigger, StatusBadge, Textarea } from "@/components/ui";
+import { Button, Dialog, DialogClose, DialogContent, DialogTrigger, StatusBadge, Textarea } from "@/components/ui";
 
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
@@ -89,13 +89,20 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
     return () => window.clearInterval(timer);
   }, [checkedOutAt]);
 
-  if (!checkedInAt) return null;
+  if (!checkedInAt && compact) return null;
 
-  const start = new Date(checkedInAt).getTime();
+  const start = checkedInAt ? new Date(checkedInAt).getTime() : null;
   const end = checkedOutAt ? new Date(checkedOutAt).getTime() : now?.getTime();
-  const elapsedSeconds = totalMinutes && checkedOutAt ? totalMinutes * 60 : end ? Math.max(0, Math.floor((end - start) / 1000)) : null;
+  const elapsedSeconds = totalMinutes !== null && totalMinutes !== undefined && checkedOutAt
+    ? totalMinutes * 60
+    : start !== null && end
+      ? Math.max(0, Math.floor((end - start) / 1000))
+      : checkedInAt
+        ? null
+        : 0;
   const elapsedLabel = elapsedSeconds === null ? "--:--:--" : formatElapsedTime(elapsedSeconds);
   const isComplete = Boolean(checkedOutAt);
+  const progress = Math.min(100, ((elapsedSeconds || 0) / (8 * 60 * 60)) * 100);
 
   if (compact) {
     return (
@@ -107,10 +114,18 @@ function WorkingTimeCounter({ checkedInAt, checkedOutAt, totalMinutes, compact =
   }
 
   return (
-    <div className="rounded-lg border border-brand/10 bg-brandSoft px-4 py-3">
-      <p className="text-sm font-medium text-brand">Working time</p>
-      <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">{elapsedLabel}</p>
-      <p className="mt-1 text-sm text-muted">{isComplete ? "Final time recorded at check-out." : "Counting from your check-in time."}</p>
+    <div className="mx-auto w-full max-w-md py-1">
+      <div className="relative mx-auto aspect-[2/1] w-full max-w-[360px] overflow-hidden" aria-label={`${elapsedLabel} working hours`}>
+        <svg viewBox="0 0 200 108" className="h-full w-full" aria-hidden>
+          <path d="M 20 98 A 80 80 0 0 1 180 98" pathLength="100" fill="none" stroke="#e8ecf5" strokeWidth="14" strokeLinecap="round" />
+          <path d="M 20 98 A 80 80 0 0 1 180 98" pathLength="100" fill="none" stroke="#243a79" strokeWidth="14" strokeLinecap="round" strokeDasharray={`${progress} 100`} />
+        </svg>
+        <div className="absolute inset-x-0 bottom-0 text-center">
+          <p className="text-3xl font-semibold tracking-tight text-ink tabular-nums sm:text-4xl">{elapsedLabel}</p>
+          <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted">Working hours</p>
+        </div>
+      </div>
+      <p className="mt-3 text-center text-xs text-muted">{isComplete ? "Final time recorded at check-out" : checkedInAt ? "Live time since check-in" : "Your timer starts when you check in"}</p>
     </div>
   );
 }
@@ -189,6 +204,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   }
 
   const disabled = nextAction === "done";
+  const ActionIcon = nextAction === "check-in" ? LogIn : nextAction === "check-out" ? LogOut : CheckCircle2;
 
   const actionDialog = (
     <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -196,7 +212,8 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
       setDialogOpen(open);
     }}>
       <DialogTrigger asChild>
-        <Button className={compact ? "w-full shrink-0 sm:w-auto" : "w-full sm:w-auto"} disabled={disabled || pending || locating}>
+        <Button className={compact ? "w-full shrink-0 sm:w-auto" : "w-full"} disabled={disabled || pending || locating}>
+          <ActionIcon className="h-4 w-4" aria-hidden />
           {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Completed"}
         </Button>
       </DialogTrigger>
@@ -281,22 +298,30 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   }
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-start gap-3">
-        <div className="rounded-md bg-brandSoft p-2 text-brand">
-          {disabled ? <Clock className="h-5 w-5" aria-hidden /> : <LocateFixed className="h-5 w-5" aria-hidden />}
-        </div>
+    <section className="rounded-xl border border-line bg-white px-4 py-5 shadow-[0_18px_50px_rgba(17,25,79,0.08)] sm:px-7 sm:py-7">
+      <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h2 className="text-lg font-semibold text-ink">
-            {nextAction === "check-in" ? "Check in for today" : nextAction === "check-out" ? "Check out for today" : "Attendance complete"}
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">Today&apos;s attendance</p>
+          <h2 className="mt-1 text-lg font-semibold text-ink">
+            {nextAction === "check-in" ? "Ready to start your workday?" : nextAction === "check-out" ? "Your workday is in progress" : "Your attendance is complete"}
           </h2>
-          <p className="mt-1 text-sm text-muted">
-            Your location will only be captured for this attendance action. We do not track your movement continuously.
-          </p>
+        </div>
+        {status ? <StatusBadge value={status} /> : null}
+      </div>
+
+      <WorkingTimeCounter checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} />
+
+      <div className="my-5 grid grid-cols-2 divide-x divide-line border-y border-line py-4 text-center">
+        <div className="px-3">
+          <p className="text-xs font-medium text-muted">Check in</p>
+          <p className="mt-1 text-lg font-semibold text-ink tabular-nums">{dashboardTime(checkedInAt)}</p>
+        </div>
+        <div className="px-3">
+          <p className="text-xs font-medium text-muted">Check out</p>
+          <p className="mt-1 text-lg font-semibold text-ink tabular-nums">{dashboardTime(checkedOutAt)}</p>
         </div>
       </div>
-      {lastLocation ? <p className="rounded-md bg-surface px-3 py-2 text-sm text-muted">Last captured location: {lastLocation}</p> : null}
-      {checkedInAt ? <WorkingTimeCounter checkedInAt={checkedInAt} checkedOutAt={checkedOutAt} totalMinutes={totalMinutes} /> : null}
+
       {warning ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
           <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -304,7 +329,11 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
         </div>
       ) : null}
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">{message}</div> : null}
-      {actionDialog}
-    </Card>
+      <div className="mt-5">{actionDialog}</div>
+      <div className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted">
+        {lastLocation ? <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden /> : <LocateFixed className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />}
+        <p>{lastLocation ? `Last recorded location: ${lastLocation}` : "Your location is captured only when you submit attendance. Continuous tracking is never used."}</p>
+      </div>
+    </section>
   );
 }
