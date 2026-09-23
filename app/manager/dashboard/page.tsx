@@ -45,7 +45,7 @@ export default async function ManagerDashboardPage() {
         { label: "Pending approvals", value: pendingLeave, attention: pendingLeave > 0 }
       ]} />
       {user.role !== Role.SUPER_ADMIN ? (
-        <AttendanceActionCard compact status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
+        <AttendanceActionCard status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
           lastLocation={location} checkedInAt={selfAttendance?.checkInTime?.toISOString()}
           checkedOutAt={selfAttendance?.checkOutTime?.toISOString()} totalMinutes={selfAttendance?.totalMinutes} />
       ) : null}

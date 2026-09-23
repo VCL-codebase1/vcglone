@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
         { label: "Pending review today", value: pendingReview, attention: pendingReview > 0 }
       ]} />
       {actor.role !== Role.SUPER_ADMIN ? (
-        <AttendanceActionCard compact status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
+        <AttendanceActionCard status={selfAttendance?.status ?? "NOT_CHECKED_IN"} nextAction={nextAction}
           lastLocation={location} checkedInAt={selfAttendance?.checkInTime?.toISOString()}
           checkedOutAt={selfAttendance?.checkOutTime?.toISOString()} totalMinutes={selfAttendance?.totalMinutes} />
       ) : null}

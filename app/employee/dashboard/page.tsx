@@ -32,7 +32,6 @@ export default async function EmployeeDashboardPage() {
     <div className="space-y-6">
       <PageHeader title={`Welcome back, ${user.firstName}`} description={formatDate(today)} />
       <AttendanceActionCard
-        compact
         status={leaveToday ? "ON_LEAVE" : record?.status ?? "NOT_CHECKED_IN"}
         nextAction={nextAction}
         lastLocation={location}
