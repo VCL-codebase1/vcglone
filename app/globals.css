@@ -6,7 +6,7 @@
   --color-ink: 17 25 79;
   --color-muted: 96 111 139;
   --color-line: 226 230 237;
-  --color-surface: 246 247 249;
+  --color-surface: 240 243 247;
   --color-panel: 255 255 255;
   --color-brand: 36 58 121;
   --color-brand-soft: 238 243 251;
@@ -15,7 +15,7 @@
   --color-danger: 180 35 24;
   --toast-shadow: 0 14px 36px rgba(31, 45, 89, 0.1);
   color-scheme: light;
-  background: #ffffff;
+  background: #e7ebf1;
 }
 
 * {
@@ -30,7 +30,7 @@ body {
   min-height: 100vh;
   margin: 0;
   color: rgb(var(--color-ink));
-  background: #ffffff;
+  background: #e7ebf1;
 }
 
 ::selection {
@@ -82,11 +82,11 @@ input[type="date"]::-webkit-date-and-time-value {
   }
 
   .workspace-toolbar {
-    @apply border-y border-line bg-surface/60 px-0 py-3;
+    @apply rounded-2xl border border-white bg-white/80 px-4 py-4;
   }
 
   .workspace-section {
-    @apply min-w-0 border-t border-line pt-6;
+    @apply min-w-0 rounded-3xl border border-white bg-white p-5 sm:p-6;
   }
 
   .workspace-control {

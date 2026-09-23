@@ -7,7 +7,7 @@ import { forwardRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
+  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 max-[420px]:w-full",
   {
     variants: {
       variant: {
@@ -41,7 +41,7 @@ export function LinkButton({
   return (
     <Link
       className={cn(
-        "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition max-[420px]:w-full",
+        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition max-[420px]:w-full",
         variant === "primary" && "bg-brand text-white hover:bg-[#182a63]",
         variant === "secondary" && "border border-line bg-white text-ink hover:border-brand/25 hover:bg-brandSoft/50",
         className

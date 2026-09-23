@@ -14,7 +14,7 @@ export type DashboardMetric = {
 
 export function DashboardMetricStrip({ metrics }: { metrics: DashboardMetric[] }) {
   return (
-    <div className="grid border-y border-line py-3 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-line">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 sm:gap-4">
         {metrics.map((metric) => {
           const content = (
             <>
@@ -22,11 +22,11 @@ export function DashboardMetricStrip({ metrics }: { metrics: DashboardMetric[] }
                 <p className="text-sm font-medium text-muted">{metric.label}</p>
                 {metric.href ? <ArrowUpRight className="h-4 w-4 shrink-0 text-muted transition group-hover:text-brand" aria-hidden /> : null}
               </div>
-              <p className={cn("mt-2 text-2xl font-semibold tracking-tight text-ink", metric.attention && "text-warning")}>{metric.value}</p>
+              <p className={cn("mt-5 text-4xl font-medium tracking-[-0.05em] text-ink sm:text-5xl", metric.attention && "text-warning")}>{metric.value}</p>
               {metric.detail ? <p className="mt-1 text-xs text-muted">{metric.detail}</p> : null}
             </>
           );
-          const className = "group block min-h-20 border-b border-line px-4 py-3 text-left transition hover:bg-surface sm:odd:border-r xl:border-b-0 xl:px-5";
+          const className = cn("focus-ring group block rounded-3xl border border-white bg-white p-5 text-left transition hover:shadow-soft sm:p-6", metric.attention && "bg-[#fff6e6] border-[#fff6e6]");
 
           return metric.href
             ? <Link key={metric.label} href={metric.href} className={className}>{content}</Link>

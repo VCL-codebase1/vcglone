@@ -14,9 +14,9 @@ export function PageToolbar({ children, className }: { children: ReactNode; clas
 
 export function MetricStrip({ items, className }: { items: MetricItem[]; className?: string }) {
   return (
-    <dl className={cn("grid min-w-0 grid-cols-2 border-y border-line py-3 sm:grid-cols-4 xl:flex", className)}>
+    <dl className={cn("grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4 xl:flex", className)}>
       {items.map((item) => (
-        <div key={item.label} className="min-w-0 border-l border-line px-4 py-2 first:border-l-0 first:pl-0 xl:flex-1 xl:px-5">
+        <div key={item.label} className="min-w-0 rounded-3xl bg-white px-5 py-5 xl:flex-1 xl:px-6">
           <dt className="truncate text-xs font-medium text-muted">{item.label}</dt>
           <dd className={cn("mt-1 text-2xl font-semibold tracking-tight text-ink", item.attention && "text-warning")}>{item.value}</dd>
           {item.detail ? <p className="mt-0.5 truncate text-[11px] text-muted">{item.detail}</p> : null}

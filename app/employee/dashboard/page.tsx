@@ -1,4 +1,7 @@
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
+import Link from "next/link";
+import { ArrowUpRight, BookOpen, MessageSquare, ListChecks } from "lucide-react";
+import { WeeklyWorkCard } from "@/components/weekly-work-card";
 import { AttendanceActionCard } from "@/components/attendance-action-card";
 import { BirthdaysThisMonthCard } from "@/components/birthday-card";
 import { EmployeeDashboardActivity } from "@/components/employee-dashboard-activity";
@@ -15,7 +18,9 @@ export default async function EmployeeDashboardPage() {
   const user = await requireUser();
   const today = todayDateOnly();
   const month = new Date().getMonth() + 1;
-  const [record, leaveToday, recentAttendance, balances, leaveRequests, birthdays] = await Promise.all([
+  const weekStart = new Date(today);
+  weekStart.setUTCDate(today.getUTCDate() - ((today.getUTCDay() + 6) % 7));
+  const [record, leaveToday, recentAttendance, balances, leaveRequests, birthdays, weeklyAttendance] = await Promise.all([
     prisma.attendanceRecord.findUnique({ where: { employeeId_date: { employeeId: user.id, date: today } } }),
     prisma.leaveRequest.findFirst({
       where: { employeeId: user.id, status: "APPROVED", startDate: { lte: today }, endDate: { gte: today } },
@@ -28,7 +33,8 @@ export default async function EmployeeDashboardPage() {
       where: { employmentStatus: "ACTIVE", dateOfBirth: { not: null }, role: { not: "SUPER_ADMIN" } },
       include: { department: true },
       orderBy: { firstName: "asc" }
-    })
+    }),
+    prisma.attendanceRecord.findMany({ where: { employeeId: user.id, date: { gte: weekStart, lt: addDays(weekStart, 7) }, checkOutTime: { not: null } }, select: { date: true, totalMinutes: true } })
   ]);
   const birthdayRows = birthdays.filter((person) => person.dateOfBirth && person.dateOfBirth.getUTCMonth() + 1 === month);
 
@@ -58,9 +64,19 @@ export default async function EmployeeDashboardPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={`Good day, ${user.firstName}`} description={format(new Date(), "EEEE, MMMM d, yyyy")} action={<div className="border-l border-line px-3 py-1 text-sm font-semibold text-ink"><LiveClock /></div>} />
+      <PageHeader title={`Welcome back, ${user.firstName}`} description={format(new Date(), "EEEE, MMMM d, yyyy")} action={<div className="rounded-full bg-white px-5 py-3 text-sm font-medium text-ink"><LiveClock /></div>} />
+      <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-[0.85fr_1fr_1.15fr]">
+        <section className="flex flex-col rounded-3xl bg-brand p-6 text-white">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-xl font-medium ring-1 ring-white/25">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</span>
+          <h2 className="mt-6 text-2xl font-medium tracking-tight">{user.firstName} {user.lastName}</h2>
+          <p className="mt-1 text-sm capitalize text-white/70">{user.role.replace(/_/g, " ").toLowerCase()}</p>
+          <div className="mt-auto space-y-2 pt-8">
+            {[{ href: "/employee/tasks", label: "My tasks", Icon: ListChecks }, { href: "/employee/chat", label: "Team chat", Icon: MessageSquare }, { href: "/employee/knowledge-base", label: "Knowledge Base", Icon: BookOpen }].map(({ href, label, Icon }) => <Link key={href} href={href} className="focus-ring flex min-h-12 items-center gap-3 rounded-2xl bg-white/10 px-4 text-sm transition hover:bg-white/20"><Icon className="h-4 w-4" /><span className="flex-1">{label}</span><ArrowUpRight className="h-4 w-4 text-white/60" /></Link>)}
+          </div>
+        </section>
+        <WeeklyWorkCard weekStart={weekStart} records={weeklyAttendance} />
+        <div className="order-first md:col-span-2 xl:order-none xl:col-span-1">
       <AttendanceActionCard
-        compact
         status={status}
         nextAction={nextAction}
         lastLocation={location}
@@ -68,11 +84,13 @@ export default async function EmployeeDashboardPage() {
         checkedOutAt={record?.checkOutTime?.toISOString()}
         totalMinutes={record?.totalMinutes}
       />
+        </div>
+      </div>
       <TaskDashboardPanel user={{ id: user.id, role: user.role }} scope="mine" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <EmployeeDashboardActivity attendance={attendanceActivity} leave={leaveActivity} />
         <div className="space-y-5">
-          <section className="space-y-3 border-t border-line pt-5">
+          <section className="workspace-section space-y-3">
             <div>
               <h2 className="font-semibold text-ink">Leave balances</h2>
               <p className="mt-0.5 text-sm text-muted">Available days this year.</p>

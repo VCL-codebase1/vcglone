@@ -21,7 +21,7 @@ export function BirthdaysThisMonthCard({ birthdays, limit = 3 }: { birthdays: Bi
   });
 
   return (
-    <section className="h-fit self-start space-y-3 border-t border-line pt-5">
+    <section className="workspace-section h-fit self-start space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brandSoft text-brand">

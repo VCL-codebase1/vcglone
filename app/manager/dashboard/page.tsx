@@ -50,7 +50,7 @@ export default async function ManagerDashboardPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={`Good day, ${user.firstName}`} description="Team attendance and approvals." />
+      <PageHeader title={`Welcome back, ${user.firstName}`} description="Team attendance and approvals." />
       {user.role !== Role.SUPER_ADMIN ? (
         <AttendanceActionCard
           compact
@@ -70,7 +70,7 @@ export default async function ManagerDashboardPage() {
       ]} />
       <TaskDashboardPanel user={{ id: user.id, role: user.role }} scope="team" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-        <section className="min-w-0 space-y-3">
+        <section className="workspace-section space-y-4">
           <DashboardSectionHeader title="Team attendance" description="The latest six check-ins for today." href="/manager/attendance" linkLabel="View full attendance" />
           {teamAttendance.length ? (
             <Table>
@@ -84,7 +84,7 @@ export default async function ManagerDashboardPage() {
           ) : <EmptyState title="No team check-ins yet" description="Today’s team attendance will appear here." />}
         </section>
         <div className="space-y-5">
-          <section className="space-y-4 border-t border-line pt-5">
+          <section className="workspace-section space-y-4 !bg-[#e5ebf8]">
             <div>
               <h2 className="font-semibold text-ink">Needs attention</h2>
               <p className="mt-0.5 text-sm text-muted">Items that may require follow-up.</p>

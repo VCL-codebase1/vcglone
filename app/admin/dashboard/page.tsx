@@ -71,7 +71,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Admin Dashboard"
+        title={`Welcome back, ${actor.firstName}`}
         description="Attendance, leave, and employee activity."
         action={<AttendanceLiveRefresh />}
       />
@@ -94,12 +94,12 @@ export default async function AdminDashboardPage() {
       ]} />
       <TaskDashboardPanel user={{ id: actor.id, role: actor.role }} scope="organization" />
       <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-        <section className="min-w-0 space-y-3">
+        <section className="workspace-section space-y-4">
           <DashboardSectionHeader title="Today’s attendance" description="The latest eight attendance updates." href="/admin/today-attendance" linkLabel="View full attendance" />
           {todayAttendanceRows.length ? <TodayAttendanceDataTable data={todayAttendanceRows.slice(0, 8)} /> : <EmptyState title="No attendance activity yet" description="Today’s check-ins and approved leave will appear here." />}
         </section>
         <div className="space-y-5">
-          <section className="space-y-4 border-t border-line pt-5">
+          <section className="workspace-section space-y-4 !bg-[#e5ebf8]">
             <div>
               <h2 className="font-semibold text-ink">Needs attention</h2>
               <p className="mt-0.5 text-sm text-muted">Open items requiring an HR decision.</p>

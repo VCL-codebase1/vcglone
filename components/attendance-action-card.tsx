@@ -261,7 +261,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
 
   if (compact) {
     return (
-      <section className="space-y-4 border-b border-line pb-5">
+      <section className="workspace-section space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="rounded-xl bg-brandSoft p-2.5 text-brand">
@@ -298,7 +298,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   }
 
   return (
-    <section className="rounded-xl border border-line bg-white px-4 py-5 shadow-[0_18px_50px_rgba(17,25,79,0.08)] sm:px-7 sm:py-7">
+    <section className="flex h-full flex-col rounded-3xl border border-white bg-white px-4 py-5 sm:px-6 sm:py-6">
       <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">Today&apos;s attendance</p>
