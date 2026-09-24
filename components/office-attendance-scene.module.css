@@ -28,9 +28,11 @@
   .experience [data-attendance-timer] { margin-top: 12px; width: min(100%, 300px); }
   .experience [data-attendance-heading] h2 { font-size: 18px; line-height: 26px; }
 }
-.eveningWash, .closedLaptop, .departingEmployee { opacity: 0; }
-.windowLight, .seatedEmployee, .arrivingEmployee, .departingEmployee, .openLaptop, .closedLaptop { transition: opacity 420ms ease; }
+.eveningWash, .closedLaptop, .departingEmployee, .morningDim { opacity: 0; }
+.windowLight, .seatedEmployee, .arrivingEmployee, .departingEmployee, .openLaptop, .closedLaptop, .morningDim { transition: opacity 700ms ease; }
 
+.scene[data-state="before-check-in"] .morningDim { opacity: .34; }
+.scene[data-state="before-check-in"] .windowLight { opacity: .62; }
 .scene[data-state="before-check-in"] .seatedEmployee { opacity: 0; }
 .scene[data-state="before-check-in"] .arrivingEmployee { opacity: 1; }
 .scene[data-state="before-check-in"] .passingColleague { opacity: .18; }

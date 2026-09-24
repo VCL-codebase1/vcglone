@@ -182,6 +182,7 @@ export function OfficeAttendanceScene({
           <path d="m215 190 33 14-11 26-37-16Z" fill="#f0b76c" />
           <path className={styles.lampGlow} d="m221 220 51 54h-85Z" fill="#ffe6a8" opacity=".2" />
         </g>
+        <rect className={styles.morningDim} width="760" height="400" rx="30" fill="#17233d" />
       </svg>
     </div>
   );

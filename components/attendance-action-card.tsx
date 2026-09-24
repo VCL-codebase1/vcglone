@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, LocateFixed, LogIn, LogOut, MapPin, MapPinOff } fr
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { toast } from "@/lib/toast";
 import { submitAttendanceAction } from "@/lib/actions";
-import { Button, Dialog, DialogClose, DialogContent, DialogTrigger, StatusBadge, Textarea } from "@/components/ui";
+import { Button, Dialog, DialogClose, DialogContent, StatusBadge, Textarea } from "@/components/ui";
 
 type Props = {
   nextAction: "check-in" | "check-out" | "done";
@@ -182,12 +182,14 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
     if (!navigator.geolocation) {
       setWarning("Location is unavailable on this device. Add a note to submit for review.");
       setLocationUnavailable(true);
+      setDialogOpen(true);
       return;
     }
 
     if (!window.isSecureContext) {
       setWarning("Location requires a secure HTTPS connection. Add a note to submit for review.");
       setLocationUnavailable(true);
+      setDialogOpen(true);
       return;
     }
 
@@ -201,6 +203,7 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
       setWarning(errorMessage);
       toast.warning("Location unavailable", { description: errorMessage });
       setLocationUnavailable(true);
+      setDialogOpen(true);
     } finally {
       setLocating(false);
     }
@@ -210,56 +213,55 @@ export function AttendanceActionCard({ nextAction, lastLocation, checkedInAt, ch
   const ActionIcon = nextAction === "check-in" ? LogIn : nextAction === "check-out" ? LogOut : CheckCircle2;
 
   const actionDialog = (
-    <Dialog open={dialogOpen} onOpenChange={(open) => {
-      if (!open && (pending || locating)) return;
-      setDialogOpen(open);
-    }}>
-      <DialogTrigger asChild>
-        <Button className={compact ? "w-full shrink-0 sm:w-auto" : "w-full"} disabled={disabled || pending || locating}>
-          <ActionIcon className="h-4 w-4" aria-hidden />
-          {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Completed"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent
-        title={nextAction === "check-in" ? "Confirm check in" : "Confirm check out"}
-        description="Your browser will ask for location once for this attendance action."
+    <>
+      <Button
+        type="button"
+        className={compact ? "w-full shrink-0 sm:w-auto" : "w-full"}
+        disabled={disabled || pending || locating}
+        onClick={() => captureAndSubmit()}
       >
-        <div className="space-y-4">
-          {locationUnavailable ? (
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
-                <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <span>{warning || "Location is unavailable. Add a note to submit for review."}</span>
-              </div>
-              <Textarea
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                placeholder="Required note for review because location is unavailable."
-                rows={4}
-                disabled={disabled || pending}
-                required
-              />
+        <ActionIcon className="h-4 w-4" aria-hidden />
+        {pending ? "Submitting..." : locating ? "Getting location..." : nextAction === "check-in" ? "Check In" : nextAction === "check-out" ? "Check Out" : "Completed"}
+      </Button>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        if (!open && (pending || locating)) return;
+        setDialogOpen(open);
+      }}>
+        <DialogContent
+          title="Location needed"
+          description="Retry location or add a short note so this attendance action can be reviewed."
+        >
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-warning">
+              <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>{warning || "Location is unavailable. Add a note to submit for review."}</span>
             </div>
-          ) : null}
-          <p className="text-sm text-muted">
-            vcglOne stores the captured latitude, longitude, GPS accuracy, timestamp, and device information. It does not track your movement continuously.
-          </p>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <DialogClose asChild>
-              <Button type="button" variant="secondary" disabled={pending || locating}>Cancel</Button>
-            </DialogClose>
-            {locationUnavailable ? (
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Required note for review because location is unavailable."
+              rows={3}
+              disabled={disabled || pending}
+              required
+            />
+            <p className="text-xs leading-5 text-muted">
+              Location is captured only for this action. vcglOne does not track your movement continuously.
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" disabled={pending || locating}>Cancel</Button>
+              </DialogClose>
               <Button type="button" variant="secondary" disabled={pending || locating} onClick={() => captureAndSubmit(true)}>
                 {locating ? "Retrying..." : "Retry location"}
               </Button>
-            ) : null}
-            <Button type="button" disabled={pending || locating} onClick={() => captureAndSubmit()}>
-              {pending ? "Submitting..." : locating ? "Getting location..." : locationUnavailable ? "Submit for review" : "Continue"}
-            </Button>
+              <Button type="button" disabled={pending || locating} onClick={() => captureAndSubmit()}>
+                {pending ? "Submitting..." : "Submit for review"}
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 
   if (compact) {
